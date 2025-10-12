@@ -27,7 +27,9 @@ private struct StudyCoorBackgroundLayer: View {
                 )
             }
         }
-        .ignoresSafeArea()
+        // Avoid covering the navigation bar/title on iOS 18+ while still letting
+        // the gradient extend edge-to-edge for the content area.
+        .ignoresSafeArea(edges: [.horizontal, .bottom])
     }
 }
 
@@ -37,4 +39,3 @@ extension View {
         background(StudyCoorBackgroundLayer())
     }
 }
-

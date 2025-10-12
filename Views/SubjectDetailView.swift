@@ -3,11 +3,9 @@ import SwiftData
 
 struct SubjectDetailView: View {
     @Environment(\.modelContext) private var ctx
-    @Environment(\.colorScheme) private var colorScheme
     let subject: Subject
 
     @Query private var calcs: [Calculation]
-    @State private var startCalc = false
 
     init(subject: Subject) {
         self.subject = subject
@@ -45,18 +43,6 @@ struct SubjectDetailView: View {
             } header: { Label("Visits", systemImage: "calendar") }
         }
         .navigationTitle(subject.displayName ?? subject.code)
-        .navigationDestination(isPresented: $startCalc) {
-            CalculatorView(prefill: prefill)
-        }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    startCalc = true
-                } label: {
-                    Label("New Calculation", systemImage: "plus.circle.fill")
-                }
-            }
-        }
         .listStyle(.insetGrouped)
         .studyCoorBackground()
     }
@@ -73,13 +59,6 @@ struct SubjectDetailView: View {
                 Spacer()
                 stat(title: "Best/Worst", value: String(format: "%.0f/%.0f", bestCompliance, worstCompliance))
             }
-            Button {
-                startCalc = true
-            } label: {
-                Label("New Calculation", systemImage: "plus.circle")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
         }
         .padding(12)
         .background(RoundedRectangle(cornerRadius: 12).fill(.ultraThinMaterial))
@@ -104,14 +83,6 @@ struct SubjectDetailView: View {
         if pct > 110 { return .orange }
         if pct < 90 { return .red }
         return .green
-    }
-
-    private var prefill: CalculatorView.Prefill {
-        let freq = subject.study?.defaultFrequency ?? .qd
-        let partials = subject.study?.defaultPartialDoseEnabled ?? false
-        let prn = subject.study?.defaultPrnTargetPerDay
-        let studyName = subject.study?.name
-        return .init(subjectId: subject.code, frequency: freq, partials: partials, prnTargetPerDay: prn, studyName: studyName)
     }
 
 }

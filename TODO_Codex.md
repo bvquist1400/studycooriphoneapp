@@ -6,12 +6,15 @@ Purpose: Handle App Store–blocking work, deeper architecture/features, and pro
 
 ## Phase 0 — Build & Project Hygiene
 
-- [ ] Set iOS deployment target to 17.0+ for all targets (SwiftData requirement) in `StudyCoor.xcodeproj`.
-- [ ] Set proper bundle identifiers (reversed‑DNS) for app and test targets; assign Development Team and verify signing.
-- [ ] Migrate App Icon to Apple’s “Single‑Size App Icon” (1024×1024) or provide full catalog with filenames; ensure it validates for submission.
-- [ ] Audit Info settings: category, orientations (decide on iPhone portrait‑only or keep landscape), marketing/build versioning.
+- [x] Set iOS deployment target to 17.0+ for all targets (SwiftData requirement) in `StudyCoor.xcodeproj`.
+- [x] Set proper bundle identifiers (reversed‑DNS) for app and test targets; assign Development Team and verify signing.
+- [x] Migrate App Icon to Apple’s “Single‑Size App Icon” (1024×1024) or provide full catalog with filenames; ensure it validates for submission.
+- [x] Audit Info settings: category, orientations (decide on iPhone portrait‑only or keep landscape), marketing/build versioning.
 
 Acceptance: Project builds for device; Archive succeeds; icons validate in Xcode’s App Icon check; signing shows no warnings.
+
+Notes:
+- Deployment target, signing teams, and portrait-only iPhone configuration are now tracked in source control; adjust if product requirements change.
 
 ## Phase 1 — App Store Blockers
 
@@ -21,8 +24,8 @@ Acceptance: Project builds for device; Archive succeeds; icons validate in Xcode
   - [ ] Replace paywall button actions with real purchases; keep graceful error UI and retry.
   - [ ] Implement “Restore Purchases” using `Transaction.currentEntitlements` and `AppStore.sync()`.
   - [ ] Gate Studies/Subjects features on entitlement (and reflect state across app start).
-- [ ] Add `PrivacyInfo.xcprivacy` manifest declaring data practices (likely no data collection; no tracking).
-- [ ] Replace Settings support/privacy links with final URLs and confirm they load in production builds.
+- [x] Add `PrivacyInfo.xcprivacy` manifest declaring data practices (likely no data collection; no tracking).
+- [x] Replace Settings support/privacy links with final URLs and confirm they load in production builds.
 
 Acceptance: TestFlight build passes App Store Connect privacy checks; paywall purchases/restore work on a device sandbox account; entitlement gating robust to offline.
 
@@ -59,4 +62,3 @@ Dependencies/Inputs Needed:
 - Bundle ID prefix (e.g., `com.yourcompany.studycoor`).
 - Final support and privacy policy URLs.
 - App icon (1024×1024 PNG, corner radius none) if using Single‑Size icon.
-

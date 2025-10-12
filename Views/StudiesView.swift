@@ -38,6 +38,7 @@ struct StudiesView: View {
                 .onDelete(perform: delete)
             }
             .navigationTitle("Studies")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showNew = true } label: { Label("New Study", systemImage: "plus") }
@@ -78,7 +79,7 @@ struct StudiesView: View {
     }
 
     private func createStudy() {
-        let prn = Double(newPrnTargetPerDay)
+        let prn = NumericFormatter.parseLocalized(newPrnTargetPerDay)
         let notes = newNotes.trimmingCharacters(in: .whitespacesAndNewlines)
         let study = Study(
             name: newName,

@@ -24,7 +24,7 @@ Optional:
 
 ## Phase 1 — Submission Prep (Content)
 
-- [ ] Replace placeholder links in `Views/SettingsView.swift` with real Support and Privacy Policy URLs (values to be provided by owner).
+- [x] Replace placeholder links in `Views/SettingsView.swift` with real Support and Privacy Policy URLs (values to be provided by owner).
 - [x] Add `PrivacyInfo.xcprivacy` file stub (no collection, no tracking) for Codex to finalize.
   - Path: `StudyCoor/PrivacyInfo.xcprivacy` ✅
   - Added proper plist format (not JSON) with NSPrivacyTracking=false and empty arrays
@@ -45,7 +45,7 @@ Acceptance: Privacy manifest present in project directory ✅. Support/Privacy U
   - ✅ Add `.submitLabel(.done)` where appropriate and ensure tap‑to‑dismiss keyboard.
   - ✅ Created `Views/View+NumericValidation.swift` with `.numericValidation()` and `.integerValidation()` modifiers
   - ✅ Applied validation to all Calculator TextFields, bottle inputs, and PRN target fields
-- [ ] Orientation: if product decision is portrait‑only on iPhone, update build settings:
+- [x] Orientation: if product decision is portrait‑only on iPhone, update build settings:
   - Set `INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait`.
   - Keep iPad orientations unchanged.
 - [x] "How we calculated this" setting: show a simple explanatory footer under the results when ON (full detailed explainer is owned by Codex Phase 2).
@@ -62,6 +62,7 @@ Acceptance: Background duplication removed ✅; fields disallow negatives ✅; k
 - Input validation complete: numeric fields clamp to non-negative values and respect `partials` setting
 - Applied validation to 12+ TextField locations across CalculatorView, StudyDetailView, and creation sheets
 - "How we calculated" feature already implemented and working correctly
+- App now enforces portrait-only on iPhone via build settings; iPad orientations retained
 
 ## Phase 3 — Tests Light
 
@@ -81,5 +82,6 @@ Acceptance: Test target compiles and runs; new test passes ✅.
 
 ## Notes for Coordination
 
+- Privacy manifest (`StudyCoor/PrivacyInfo.xcprivacy`) is now bundled with the app target and ready for final data declarations.
 - App Icon assets: prepare `AppIcon-1024.png` (1024×1024 PNG, no rounded corners). Codex will wire it with Single‑Size App Icon or full catalog.
 - Provide final Support and Privacy URLs to both files and App Store Connect.

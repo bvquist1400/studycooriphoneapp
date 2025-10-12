@@ -35,7 +35,7 @@ struct StudyDetailView: View {
                 Toggle("Allow partial doses", isOn: $study.defaultPartialDoseEnabled)
                 let prnBinding = Binding<String>(
                     get: { study.defaultPrnTargetPerDay.map { String(format: "%.2f", $0) } ?? "" },
-                    set: { study.defaultPrnTargetPerDay = Double($0) }
+                    set: { study.defaultPrnTargetPerDay = NumericFormatter.parseLocalized($0) }
                 )
                 TextField("PRN target/day (optional)", text: prnBinding)
                     .keyboardType(.decimalPad)
@@ -170,7 +170,7 @@ private extension StudyDetailView {
     }
 
     func saveDrug() {
-        let prn = Double(drugPrnTarget)
+        let prn = NumericFormatter.parseLocalized(drugPrnTarget)
         if let edit = editDrug {
             edit.name = drugName
             edit.notes = drugNotes.isEmpty ? nil : drugNotes

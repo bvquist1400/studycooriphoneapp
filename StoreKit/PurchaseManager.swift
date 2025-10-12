@@ -38,11 +38,13 @@ final class PurchaseManager: ObservableObject {
     func loadProducts() async {
         #if canImport(StoreKit)
         isLoading = true; defer { isLoading = false }
+        lastError = nil
         do {
             let storeProducts = try await Product.products(for: [IDs.monthly, IDs.yearly])
             var dict: [String: Any] = [:]
             for p in storeProducts { dict[p.id] = p }
             self.products = dict
+            if dict.isEmpty { self.lastError = "Products unavailable." }
         } catch {
             self.lastError = error.localizedDescription
         }
@@ -53,7 +55,11 @@ final class PurchaseManager: ObservableObject {
 
     func purchase(monthly: Bool) async {
         #if canImport(StoreKit)
-        guard let product = products[monthly ? IDs.monthly : IDs.yearly] as? Product else { return }
+        lastError = nil
+        guard let product = products[monthly ? IDs.monthly : IDs.yearly] as? Product else {
+            self.lastError = "Products unavailable. Please try again after refreshing."
+            return
+        }
         do {
             let result = try await product.purchase()
             switch result {
@@ -77,6 +83,7 @@ final class PurchaseManager: ObservableObject {
 
     func restorePurchases() async {
         #if canImport(StoreKit)
+        lastError = nil
         do { try await AppStore.sync() } catch { self.lastError = error.localizedDescription }
         await refreshEntitlements()
         #else
@@ -122,4 +129,3 @@ final class PurchaseManager: ObservableObject {
     }
     #endif
 }
-

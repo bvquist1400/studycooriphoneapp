@@ -18,6 +18,8 @@ struct HistoryView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var shareSheet: ShareSheet?
     @State private var selection = Set<Calculation>()
+    @State private var persistenceError: HistorySaveError?
+    @State private var cleanupURLs: [URL] = []
 
     var body: some View {
         NavigationStack {
@@ -30,11 +32,11 @@ struct HistoryView: View {
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                         Button(role: .destructive) { delete(calculation: calc) } label: { Label("Delete", systemImage: "trash") }
-                        Button { shareSheet = ShareSheet(activityItems: [export(calc)]) } label: { Label("Share", systemImage: "square.and.arrow.up") }
+                        Button { share(calculation: calc) } label: { Label("Share", systemImage: "square.and.arrow.up") }
                     }
                     .contextMenu {
-                        Button("Share", action: { shareSheet = ShareSheet(activityItems: [export(calc)]) })
-                        Button(role: .destructive, action: { ctx.delete(calc); try? ctx.save() }) {
+                        Button("Share", action: { share(calculation: calc) })
+                        Button(role: .destructive, action: { delete(calculation: calc) }) {
                             Text("Delete")
                         }
                     }
@@ -42,6 +44,7 @@ struct HistoryView: View {
                 .onDelete(perform: delete)
             }
             .navigationTitle("History")
+            .navigationBarTitleDisplayMode(.large)
             .listStyle(.insetGrouped)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { EditButton() }
@@ -56,24 +59,46 @@ struct HistoryView: View {
             .sheet(item: $shareSheet) { sheet in
                 sheet
             }
+            .alert(item: $persistenceError) { error in
+                Alert(
+                    title: Text("Unable to save changes"),
+                    message: Text(error.message),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
         }
     }
 
 
     private func delete(at offsets: IndexSet) {
         for index in offsets { ctx.delete(items[index]) }
-        try? ctx.save()
+        persistChanges()
     }
 
     private func delete(calculation: Calculation) {
         ctx.delete(calculation)
-        try? ctx.save()
+        persistChanges()
     }
 
     private func deleteSelection() {
         for c in selection { ctx.delete(c) }
         selection.removeAll()
-        try? ctx.save()
+        persistChanges()
+    }
+
+    private func persistChanges() {
+        do {
+            try ctx.save()
+        } catch {
+            ctx.rollback()
+            persistenceError = HistorySaveError(message: error.localizedDescription)
+        }
+    }
+
+    private func share(calculation: Calculation) {
+        let content = export(calculation)
+        guard let url = write(content: content, suggestedName: "Calculation", fileExtension: "txt") else { return }
+        presentShare(fileURL: url, plainText: content)
     }
 
     private func export(_ c: Calculation) -> String {
@@ -95,7 +120,8 @@ struct HistoryView: View {
         let selected = Array(selection)
         guard !selected.isEmpty else { return }
         let csv = exportCSV(selected)
-        shareSheet = ShareSheet(activityItems: [csv])
+        guard let url = write(content: csv, suggestedName: "Calculations", fileExtension: "csv") else { return }
+        presentShare(fileURL: url, plainText: csv)
     }
 
     private func exportCSV(_ list: [Calculation]) -> String {
@@ -134,6 +160,31 @@ struct HistoryView: View {
             lines.append(escaped.joined(separator: ","))
         }
         return lines.joined(separator: "\n")
+    }
+
+    private func write(content: String, suggestedName: String, fileExtension: String) -> URL? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd-HHmmss"
+        let timestamp = formatter.string(from: Date())
+        let fileName = "\(suggestedName)-\(timestamp).\(fileExtension)"
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        do {
+            try content.write(to: url, atomically: true, encoding: .utf8)
+            return url
+        } catch {
+            print("Export write failed: \(error)")
+            return nil
+        }
+    }
+
+    private func presentShare(fileURL: URL, plainText: String? = nil) {
+        cleanupURLs = [fileURL]
+        var items: [Any] = [fileURL]
+        if let plainText { items.append(plainText) }
+        shareSheet = ShareSheet(activityItems: items) {
+            cleanupURLs.forEach { try? FileManager.default.removeItem(at: $0) }
+            cleanupURLs.removeAll()
+        }
     }
 
     private func colorForCompliance(_ pct: Double) -> Color {
@@ -180,10 +231,20 @@ struct HistoryView: View {
 struct ShareSheet: UIViewControllerRepresentable, Identifiable {
     let id = UUID()
     var activityItems: [Any]
+    var onDismiss: (() -> Void)? = nil
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        controller.completionWithItemsHandler = { _, _, _, _ in
+            onDismiss?()
+        }
+        return controller
     }
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+private struct HistorySaveError: Identifiable {
+    let id = UUID()
+    let message: String
 }
 
 #if DEBUG

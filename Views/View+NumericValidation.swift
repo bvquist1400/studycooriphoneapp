@@ -1,75 +1,105 @@
 import SwiftUI
 
+enum NumericFormatter {
+    static func parseLocalized(_ text: String, locale: Locale = .current) -> Double? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let groupingSeparator = locale.groupingSeparator ?? ","
+        let decimalSeparator = locale.decimalSeparator ?? "."
+
+        var sanitized = trimmed.replacingOccurrences(of: groupingSeparator, with: "")
+        if decimalSeparator != "." {
+            sanitized = sanitized.replacingOccurrences(of: decimalSeparator, with: ".")
+        }
+
+        let allowed = CharacterSet(charactersIn: "0123456789.-")
+        sanitized = String(sanitized.unicodeScalars.filter { allowed.contains($0) })
+
+        guard !sanitized.isEmpty else { return nil }
+        return Double(sanitized)
+    }
+
+    static func formatted(_ value: Double, allowPartials: Bool, locale: Locale = .current) -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = locale
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = allowPartials ? 6 : 0
+        return formatter.string(from: NSNumber(value: value)) ?? String(value)
+    }
+}
+
 extension View {
-    /// Validates numeric input to ensure non-negative values
-    /// - Parameters:
-    ///   - text: Binding to the text field
-    ///   - allowPartials: Whether to allow decimal values
-    ///   - lastValidValue: Optional binding to store last valid value for fallback
+    /// Validates numeric input to ensure non-negative values, respecting the user locale.
     func numericValidation(
         text: Binding<String>,
         allowPartials: Bool = true,
         lastValidValue: Binding<String>? = nil
     ) -> some View {
         self.onChange(of: text.wrappedValue) { _, newValue in
-            // Allow empty string while editing
             if newValue.isEmpty {
+                lastValidValue?.wrappedValue = ""
                 return
             }
-            
-            // Try to parse the value
-            if let doubleValue = Double(newValue) {
-                // Clamp to non-negative
-                let clampedValue = max(0, doubleValue)
-                
-                // If partials are disabled, round to whole number
-                let finalValue = allowPartials ? clampedValue : round(clampedValue)
-                
-                // Format back to string
-                let formattedValue: String
-                if allowPartials {
-                    // Remove unnecessary trailing zeros for decimals
-                    formattedValue = finalValue.truncatingRemainder(dividingBy: 1) == 0 
-                        ? String(format: "%.0f", finalValue)
-                        : String(finalValue)
+
+            let locale = Locale.current
+            let decimalSeparator = locale.decimalSeparator ?? "."
+
+            if allowPartials, let last = newValue.last, String(last) == decimalSeparator {
+                // Allow users to type the decimal separator and continue editing.
+                if newValue == decimalSeparator {
+                    text.wrappedValue = "0" + decimalSeparator
+                    lastValidValue?.wrappedValue = text.wrappedValue
                 } else {
-                    formattedValue = String(format: "%.0f", finalValue)
+                    let prefix = String(newValue.dropLast())
+                    if NumericFormatter.parseLocalized(prefix, locale: locale) != nil {
+                        lastValidValue?.wrappedValue = newValue
+                    } else {
+                        text.wrappedValue = lastValidValue?.wrappedValue ?? "0"
+                    }
                 }
-                
-                // Update if value changed
-                if formattedValue != newValue {
-                    text.wrappedValue = formattedValue
-                }
-                
-                // Store as last valid value
-                lastValidValue?.wrappedValue = formattedValue
-            } else {
-                // Invalid input - revert to last valid value or "0"
+                return
+            }
+
+            guard let parsed = NumericFormatter.parseLocalized(newValue, locale: locale) else {
                 text.wrappedValue = lastValidValue?.wrappedValue ?? "0"
+                return
+            }
+
+            let clamped = max(0, parsed)
+            let finalValue = allowPartials ? clamped : round(clamped)
+
+            if finalValue != parsed {
+                let formatted = NumericFormatter.formatted(finalValue, allowPartials: allowPartials, locale: locale)
+                text.wrappedValue = formatted
+                lastValidValue?.wrappedValue = formatted
+            } else {
+                lastValidValue?.wrappedValue = newValue
             }
         }
         .submitLabel(.done)
     }
-    
-    /// Validates integer input (like hold days) to ensure non-negative whole numbers
+
+    /// Validates integer input (like hold days) to ensure non-negative whole numbers.
     func integerValidation(text: Binding<String>) -> some View {
         self.onChange(of: text.wrappedValue) { _, newValue in
-            // Allow empty string while editing
             if newValue.isEmpty {
                 return
             }
-            
-            // Try to parse as integer
-            if let intValue = Int(newValue) {
-                let clampedValue = max(0, intValue)
-                let formattedValue = String(clampedValue)
-                
-                if formattedValue != newValue {
-                    text.wrappedValue = formattedValue
-                }
-            } else {
-                // Invalid input - revert to "0"
+
+            let locale = Locale.current
+            let sanitized = NumericFormatter.parseLocalized(newValue, locale: locale)
+
+            guard let value = sanitized else {
                 text.wrappedValue = "0"
+                return
+            }
+
+            let clamped = max(0, round(value))
+            let formatted = NumericFormatter.formatted(clamped, allowPartials: false, locale: locale)
+            if formatted != newValue {
+                text.wrappedValue = formatted
             }
         }
         .submitLabel(.done)

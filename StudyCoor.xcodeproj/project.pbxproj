@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		EB9F12182E7A28D000A138CA /* StudyCoor.storekit in Resources */ = {isa = PBXBuildFile; fileRef = EB9F12172E7A28D000A138CA /* StudyCoor.storekit */; };
 		EB9F3EBD2E62513E0095AA49 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB9F3EB72E624EAE0095AA49 /* RootView.swift */; };
 		EB9F3EBE2E62520A0095AA49 /* Calculation.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB9F3EB42E624E4D0095AA49 /* Calculation.swift */; };
 		EB9F3EBF2E6254170095AA49 /* CalculatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB9F3EB82E624EC50095AA49 /* CalculatorView.swift */; };
@@ -28,7 +29,6 @@
 		EBF11012A2E9000000000007 /* PurchaseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBF11011A2E9000000000006 /* PurchaseManager.swift */; };
 		EBF11022A2E9000000000009 /* View+NumericValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBF11021A2E9000000000008 /* View+NumericValidation.swift */; };
 		EBF13011A2E9000000000021 /* PDFExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBF13010A2E9000000000020 /* PDFExporter.swift */; };
-		EBF14011A2E9000000000031 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EBF14010A2E9000000000030 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -49,6 +49,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		EB9F12172E7A28D000A138CA /* StudyCoor.storekit */ = {isa = PBXFileReference; lastKnownFileType = file.storekit; path = StudyCoor.storekit; sourceTree = "<group>"; };
+		EBB9001F2E7B123400A1BCDE /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist; name = PrivacyInfo.xcprivacy; path = StudyCoor/PrivacyInfo.xcprivacy; sourceTree = SOURCE_ROOT; };
 		EB9F3E852E624D930095AA49 /* StudyCoor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StudyCoor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		EB9F3E942E624D940095AA49 /* StudyCoorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StudyCoorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		EB9F3E9E2E624D940095AA49 /* StudyCoorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StudyCoorUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -73,7 +75,6 @@
 		EBF11011A2E9000000000006 /* PurchaseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PurchaseManager.swift; sourceTree = "<group>"; };
 		EBF11021A2E9000000000008 /* View+NumericValidation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+NumericValidation.swift"; sourceTree = "<group>"; };
 		EBF13010A2E9000000000020 /* PDFExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFExporter.swift; sourceTree = "<group>"; };
-		EBF14010A2E9000000000030 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -188,8 +189,17 @@
 			isa = PBXGroup;
 			children = (
 				EBF11011A2E9000000000006 /* PurchaseManager.swift */,
+				EB9F12172E7A28D000A138CA /* StudyCoor.storekit */,
 			);
 			path = StoreKit;
+			sourceTree = "<group>";
+		};
+		EBF13000A2E900000000001F /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				EBF13010A2E9000000000020 /* PDFExporter.swift */,
+			);
+			path = Utils;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -271,17 +281,20 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1640;
-				LastUpgradeCheck = 1640;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					EB9F3E842E624D930095AA49 = {
 						CreatedOnToolsVersion = 16.4;
+						DevelopmentTeam = W8SH792M6Z;
 					};
 					EB9F3E932E624D940095AA49 = {
 						CreatedOnToolsVersion = 16.4;
+						DevelopmentTeam = W8SH792M6Z;
 						TestTargetID = EB9F3E842E624D930095AA49;
 					};
 					EB9F3E9D2E624D940095AA49 = {
 						CreatedOnToolsVersion = 16.4;
+						DevelopmentTeam = W8SH792M6Z;
 						TestTargetID = EB9F3E842E624D930095AA49;
 					};
 				};
@@ -312,7 +325,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				EBF14011A2E9000000000031 /* PrivacyInfo.xcprivacy in Resources */,
+				EB9F12182E7A28D000A138CA /* StudyCoor.storekit in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -449,6 +462,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -505,6 +519,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
@@ -515,24 +530,29 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W8SH792M6Z;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.medical";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.studycoor.studycoor;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.brentbloomquist.studycoor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				STOREKIT_CONFIG_FILE = StoreKit/StudyCoor.storekit;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -544,24 +564,29 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W8SH792M6Z;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.medical";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UIUserInterfaceStyle = Dark;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.studycoor.studycoor;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.brentbloomquist.studycoor;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				STOREKIT_CONFIG_FILE = StoreKit/StudyCoor.storekit;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -572,12 +597,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W8SH792M6Z;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.studycoor.studycoor.tests;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.brentbloomquist.studycoor.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -590,12 +617,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W8SH792M6Z;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.studycoor.studycoor.tests;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.brentbloomquist.studycoor.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -607,11 +636,13 @@
 		EB9F3EAF2E624D940095AA49 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W8SH792M6Z;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.studycoor.studycoor.uitests;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.brentbloomquist.studycoor.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -623,11 +654,13 @@
 		EB9F3EB02E624D940095AA49 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = W8SH792M6Z;
 				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.studycoor.studycoor.uitests;
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.brentbloomquist.studycoor.uitests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
@@ -678,12 +711,4 @@
 /* End XCConfigurationList section */
 	};
 	rootObject = EB9F3E7D2E624D930095AA49 /* Project object */;
-		EBF13000A2E900000000001F /* Utils */ = {
-			isa = PBXGroup;
-			children = (
-				EBF13010A2E9000000000020 /* PDFExporter.swift */,
-			);
-			path = Utils;
-			sourceTree = "<group>";
-		};
 }

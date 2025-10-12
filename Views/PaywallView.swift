@@ -11,6 +11,18 @@ struct PaywallView: View {
 
     enum Billing: String, CaseIterable, Identifiable { case monthly, yearly; var id: String { rawValue } }
 
+    private var selectedProductID: String {
+        billing == .monthly ? PurchaseManager.IDs.monthly : PurchaseManager.IDs.yearly
+    }
+
+    private var isPurchaseDisabled: Bool {
+        if purchases.isLoading { return true }
+        if hasStoreKit {
+            return purchases.products[selectedProductID] == nil
+        }
+        return false
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -49,7 +61,7 @@ struct PaywallView: View {
                                     .font(.system(size: 44, weight: .bold))
                                     .foregroundStyle(.blue)
                             }
-                            Text("Unlock Pro")
+                            Text("Unlock StudyCoorCalc Pro")
                                 .font(.largeTitle.bold())
                             Text("Organize studies, save defaults, and see trends")
                                 .font(.subheadline)
@@ -118,6 +130,7 @@ struct PaywallView: View {
                                     .foregroundStyle(.white)
                             }
                             .buttonStyle(.plain)
+                            .disabled(isPurchaseDisabled)
 
                             Button("Restore Purchase") {
                                 Task {
@@ -125,6 +138,20 @@ struct PaywallView: View {
                                 }
                             }
                                 .font(.subheadline)
+                                .disabled(purchases.isLoading)
+
+                            if purchases.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                                    .tint(.secondary)
+                            }
+
+                            if let error = purchases.lastError, !error.isEmpty {
+                                Text(error)
+                                    .font(.footnote)
+                                    .foregroundStyle(.red)
+                                    .multilineTextAlignment(.center)
+                            }
                         }
 
                         Text("Payment will be charged to your Apple ID. Auto‑renewable; manage or cancel anytime in Settings.")
@@ -137,7 +164,7 @@ struct PaywallView: View {
                     .padding(.vertical, 16)
                 }
             }
-            .navigationTitle("StudyCoor Pro")
+            .navigationTitle("StudyCoorCalc Pro")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color(.systemBackground), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
@@ -183,8 +210,10 @@ struct PaywallView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
             NavigationStack { PaywallView() }
+                .environmentObject(PurchaseManager.shared)
                 .preferredColorScheme(.light)
             NavigationStack { PaywallView() }
+                .environmentObject(PurchaseManager.shared)
                 .preferredColorScheme(.dark)
         }
     }
