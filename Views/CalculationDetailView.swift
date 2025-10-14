@@ -48,8 +48,8 @@ struct CalculationDetailView: View {
                 LabeledContent("Expected", value: String(format: "%.2f", calculation.expectedDoses))
                 LabeledContent("Actual", value: String(format: "%.2f", calculation.actualDoses))
                 LabeledContent("Compliance", value: String(format: "%.1f%%", calculation.compliancePct))
-                if !calculation.flags.isEmpty {
-                    LabeledContent("Flags", value: calculation.flags.joined(separator: ", "))
+                if !friendlyFlags.isEmpty {
+                    LabeledContent("Flags", value: friendlyFlags.joined(separator: ", "))
                 }
                 LabeledContent("Created", value: calculation.createdAt.formatted())
             } header: { Label("Results", systemImage: "gauge") }
@@ -91,8 +91,12 @@ struct CalculationDetailView: View {
         Missed: \(c.missedDoses)  Extra: \(c.extraDoses)  Hold days: \(c.holdDays)
         Expected: \(String(format: "%.2f", c.expectedDoses))  Actual: \(String(format: "%.2f", c.actualDoses))
         Compliance: \(String(format: "%.1f%%", c.compliancePct))
-        Flags: \(c.flags.joined(separator: ", "))
+        Flags: \(c.flags.map { ComplianceOutputs.description(for: $0) }.joined(separator: ", "))
         Created: \(c.createdAt.formatted())
         """
+    }
+
+    private var friendlyFlags: [String] {
+        calculation.flags.map { ComplianceOutputs.description(for: $0) }
     }
 }

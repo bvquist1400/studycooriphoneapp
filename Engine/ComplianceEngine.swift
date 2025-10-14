@@ -16,11 +16,61 @@ struct ComplianceInputs {
     var lastDayExpectedOverride: Int? = nil
 }
 
+struct ComplianceBreakdown: Codable, Equatable {
+    struct Expected: Codable, Equatable {
+        let inclusiveDays: Int
+        let holdDays: Int
+        let effectiveDays: Int
+        let baseDosesPerDay: Double
+        let prnTargetPerDay: Double?
+        let baseExpected: Double
+        let firstDayAdjustment: Double
+        let lastDayAdjustment: Double
+        let totalExpected: Double
+    }
+
+    struct Actual: Codable, Equatable {
+        let dispensed: Double
+        let returned: Double
+        let missed: Double
+        let extra: Double
+        let rawActual: Double
+        let afterRounding: Double
+        let afterClamping: Double
+        let partialDosesEnabled: Bool
+    }
+
+    let expected: Expected
+    let actual: Actual
+}
+
 struct ComplianceOutputs {
     let expectedDoses: Double
     let actualDoses: Double
     let compliancePct: Double
     let flags: [String]
+    let breakdown: ComplianceBreakdown
+
+    static func description(for flag: String) -> String {
+        if flag.hasPrefix("HOLD_DAYS:") {
+            if let value = Int(flag.split(separator: ":").last ?? "") {
+                return "Paused for \(value) hold day\(value == 1 ? "" : "s")"
+            }
+            return "Includes hold days"
+        }
+        switch flag {
+        case "UNDERUSE":
+            return "Usage below 90% — investigate missed doses"
+        case "OVERUSE":
+            return "Usage above 110% — possible overadherence"
+        default:
+            return flag.replacingOccurrences(of: "_", with: " ").capitalized
+        }
+    }
+
+    var flagDescriptions: [String] {
+        flags.map { Self.description(for: $0) }
+    }
 }
 
 enum ComplianceError: Error, LocalizedError {
@@ -43,10 +93,12 @@ struct ComplianceEngine {
 
         let days = daysBetweenInclusive(from: i.startDate, to: i.endDate, calendar: calendar)
         let effectiveDays = max(0, days - i.holdDays)
+        let baseDosesPerDay = (i.frequency == .prn) ? (i.prnTargetPerDay ?? 0) : i.frequency.dosesPerDay
+        let baseExpected = max(0, baseDosesPerDay * Double(effectiveDays))
+        var firstAdjustment: Double = 0
+        var lastAdjustment: Double = 0
 
-        var expected: Double = (i.frequency == .prn)
-            ? max(0, (i.prnTargetPerDay ?? 0) * Double(effectiveDays))
-            : max(0, i.frequency.dosesPerDay * Double(effectiveDays))
+        var expected = baseExpected
 
         // Apply first/last day expected overrides for scheduled regimens
         if i.frequency != .prn {
@@ -55,25 +107,35 @@ struct ComplianceEngine {
             if effectiveDays == 1 {
                 if let single = i.lastDayExpectedOverride ?? i.firstDayExpectedOverride {
                     let clamped = max(0, min(maxPerInt, single))
+                    let delta = Double(clamped) - baseExpected
+                    if i.lastDayExpectedOverride != nil {
+                        lastAdjustment = delta
+                    } else {
+                        firstAdjustment = delta
+                    }
                     expected = Double(clamped)
                 }
             } else if effectiveDays >= 2 {
                 var delta: Double = 0
                 if let first = i.firstDayExpectedOverride {
                     let clamped = max(0, min(maxPerInt, first))
-                    delta += Double(clamped - maxPerInt)
+                    let diff = Double(clamped - maxPerInt)
+                    firstAdjustment = diff
+                    delta += diff
                 }
                 if let last = i.lastDayExpectedOverride {
                     let clamped = max(0, min(maxPerInt, last))
-                    delta += Double(clamped - maxPerInt)
+                    let diff = Double(clamped - maxPerInt)
+                    lastAdjustment = diff
+                    delta += diff
                 }
                 expected = max(0, expected + delta)
             }
         }
 
-        var actual = (i.dispensed - i.returned) - i.missedDoses + i.extraDoses
-        if !i.partialDoseEnabled { actual = round(actual) }
-        actual = max(0, actual)
+        let rawActual = (i.dispensed - i.returned) - i.missedDoses + i.extraDoses
+        let afterRounding = i.partialDoseEnabled ? rawActual : round(rawActual)
+        let actual = max(0, afterRounding)
 
         let compliance = expected == 0
             ? (actual == 0 ? 100 : 0)
@@ -86,7 +148,31 @@ struct ComplianceEngine {
         }
         if days != effectiveDays { flags.append("HOLD_DAYS:\(i.holdDays)") }
 
-        return .init(expectedDoses: expected, actualDoses: actual, compliancePct: compliance, flags: flags)
+        let breakdown = ComplianceBreakdown(
+            expected: .init(
+                inclusiveDays: days,
+                holdDays: i.holdDays,
+                effectiveDays: effectiveDays,
+                baseDosesPerDay: i.frequency == .prn ? i.prnTargetPerDay ?? 0 : i.frequency.dosesPerDay,
+                prnTargetPerDay: i.frequency == .prn ? i.prnTargetPerDay : nil,
+                baseExpected: baseExpected,
+                firstDayAdjustment: firstAdjustment,
+                lastDayAdjustment: lastAdjustment,
+                totalExpected: expected
+            ),
+            actual: .init(
+                dispensed: i.dispensed,
+                returned: i.returned,
+                missed: i.missedDoses,
+                extra: i.extraDoses,
+                rawActual: rawActual,
+                afterRounding: afterRounding,
+                afterClamping: actual,
+                partialDosesEnabled: i.partialDoseEnabled
+            )
+        )
+
+        return .init(expectedDoses: expected, actualDoses: actual, compliancePct: compliance, flags: flags, breakdown: breakdown)
     }
 
     static func daysBetweenInclusive(from: Date, to: Date, calendar: Calendar) -> Int {

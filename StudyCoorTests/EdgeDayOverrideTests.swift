@@ -16,11 +16,14 @@ final class EdgeDayOverrideTests: XCTestCase {
         inputs.firstDayExpectedOverride = 1
         let out1 = try ComplianceEngine.compute(inputs)
         XCTAssertEqual(out1.expectedDoses, 1, accuracy: 0.001)
+        XCTAssertEqual(out1.breakdown.expected.firstDayAdjustment, -2, accuracy: 0.001)
+        XCTAssertEqual(out1.breakdown.expected.totalExpected, 1, accuracy: 0.001)
 
         inputs.firstDayExpectedOverride = nil
         inputs.lastDayExpectedOverride = 2
         let out2 = try ComplianceEngine.compute(inputs)
         XCTAssertEqual(out2.expectedDoses, 2, accuracy: 0.001)
+        XCTAssertEqual(out2.breakdown.expected.lastDayAdjustment, -1, accuracy: 0.001)
     }
 
     func testTwoDays_AdjustsBothEnds() throws {
@@ -38,6 +41,8 @@ final class EdgeDayOverrideTests: XCTestCase {
         inputs.lastDayExpectedOverride = 1
         let out = try ComplianceEngine.compute(inputs)
         XCTAssertEqual(out.expectedDoses, 3, accuracy: 0.001)
+        XCTAssertEqual(out.breakdown.expected.firstDayAdjustment, -1, accuracy: 0.001)
+        XCTAssertEqual(out.breakdown.expected.lastDayAdjustment, -2, accuracy: 0.001)
+        XCTAssertEqual(out.breakdown.expected.baseExpected, 6, accuracy: 0.001)
     }
 }
-

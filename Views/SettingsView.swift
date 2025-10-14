@@ -11,7 +11,6 @@ import SwiftData
 
 struct SettingsView: View {
     @AppStorage("showHowWeCalculated") private var showExplain = true
-    @AppStorage("proUnlocked") private var proUnlocked = false
     @Environment(\.modelContext) private var ctx
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.openURL) private var openURL
@@ -63,9 +62,8 @@ struct SettingsView: View {
                     Text("Saved studies, subjects, bottles, and calculations will be permanently removed.")
                 }
                 #if DEBUG
-                Button("Reset Pro Unlock (Debug)") {
-                    proUnlocked = false
-                    purchases.isProUnlocked = false
+                Button(purchases.isDebugOverrideActive ? "Disable Pro Override (Debug)" : "Enable Pro Override (Debug)") {
+                    purchases.applyDebugOverride(!purchases.isDebugOverrideActive)
                 }
                 .font(.footnote)
                 .tint(.secondary)

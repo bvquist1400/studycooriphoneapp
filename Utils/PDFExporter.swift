@@ -43,8 +43,9 @@ enum PDFExporter {
             draw("Expected: \(String(format: "%.2f", calculation.expectedDoses))", attrs: bodyAttrs)
             draw("Actual: \(String(format: "%.2f", calculation.actualDoses))", attrs: bodyAttrs)
             draw("Compliance: \(String(format: "%.1f%%", calculation.compliancePct))", attrs: bodyAttrs)
-            if !calculation.flags.isEmpty {
-                draw("Flags: \(calculation.flags.joined(separator: ", "))", attrs: bodyAttrs)
+            let friendlyFlags = calculation.flags.map { ComplianceOutputs.description(for: $0) }
+            if !friendlyFlags.isEmpty {
+                draw("Flags: \(friendlyFlags.joined(separator: ", "))", attrs: bodyAttrs)
             }
             draw("Created: \(calculation.createdAt.formatted())", attrs: bodyAttrs)
         }
@@ -54,4 +55,3 @@ enum PDFExporter {
         #endif
     }
 }
-

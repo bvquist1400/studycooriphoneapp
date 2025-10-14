@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct RootView: View {
-    @AppStorage("proUnlocked") private var proUnlocked = false // Dev fallback
     @EnvironmentObject private var purchases: PurchaseManager
     var body: some View {
         TabView {
@@ -12,12 +11,13 @@ struct RootView: View {
                 .tabItem { Label("History", systemImage: "clock.arrow.circlepath") }
 
             Group {
-                if purchases.isProUnlocked || proUnlocked {
+                if purchases.isProUnlocked {
                     StudiesView()
                 } else {
                     PaywallView()
                 }
             }
+            .id(purchases.isProUnlocked)
             .tabItem { Label("Studies", systemImage: "book") }
 
             SettingsView()

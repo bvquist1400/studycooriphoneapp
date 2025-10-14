@@ -53,7 +53,6 @@ struct CalculatorView: View {
 
     @AppStorage("lastStudyName") private var lastStudyName: String = ""
     @AppStorage("lastSubjectCode") private var lastSubjectCode: String = ""
-    @AppStorage("proUnlocked") private var proUnlocked = false
 
     @State private var subjectId = ""
     @State private var startDate = Calendar.current.date(byAdding: .day, value: -28, to: Date()) ?? Date()
@@ -73,6 +72,7 @@ struct CalculatorView: View {
     @AppStorage("showHowWeCalculated") private var showExplain = true
     @State private var errorMsg: String?
     @State private var showPaywallSheet = false
+    @State private var latestCalculation: Calculation?
 
     // Multiple bottles
     @State private var bottles: [BottleInput] = []
@@ -95,7 +95,7 @@ struct CalculatorView: View {
 
     private enum ScrollTarget: Hashable { case results }
 
-    private var isProUnlocked: Bool { purchases.isProUnlocked || proUnlocked }
+    private var isProUnlocked: Bool { purchases.isProUnlocked }
     private var isMultiDrugMode: Bool { selectedStudy?.multiDrug == true }
 
     private let keyboardInset: CGFloat = 80
@@ -145,9 +145,18 @@ struct CalculatorView: View {
             .onChange(of: extra) { _, newValue in
                 updateCurrentDrugOverride { $0.extra = newValue }
             }
+            .onChange(of: purchases.isProUnlocked) { _, newValue in
+                if newValue {
+                    showPaywallSheet = false
+                }
+            }
             .sheet(isPresented: $showNewSubjectSheet) { newSubjectSheet }
             .sheet(isPresented: $showNewStudySheet) { newStudySheet }
-            .sheet(isPresented: $showPaywallSheet) { PaywallView() }
+            .sheet(isPresented: $showPaywallSheet) {
+                PaywallView {
+                    showPaywallSheet = false
+                }
+            }
             .navigationTitle("StudyCoorCalc")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
@@ -193,6 +202,7 @@ struct CalculatorView: View {
     }
 
     private func calculate() {
+        latestCalculation = nil
         if isMultiDrugMode, let s = selectedStudy {
             persistCurrentDrugOverride()
 
@@ -249,6 +259,7 @@ struct CalculatorView: View {
                     record.actualDoses = out.actualDoses
                     record.compliancePct = out.compliancePct
                     record.flags = out.flags
+                    record.breakdown = out.breakdown
                     record.createdAt = .now
                     record.bottles = models
                     ctx.insert(record)
@@ -328,10 +339,12 @@ struct CalculatorView: View {
                 record.actualDoses = out.actualDoses
                 record.compliancePct = out.compliancePct
                 record.flags = out.flags
+                record.breakdown = out.breakdown
                 record.createdAt = .now
                 record.bottles = bottleModels
                 ctx.insert(record)
                 try ctx.save()
+                latestCalculation = record
                 if let study = selectedStudy {
                     refreshComplianceCache(for: study)
                 }
@@ -340,6 +353,7 @@ struct CalculatorView: View {
                 ctx.rollback()
                 result = nil
                 errorMsg = error.localizedDescription
+                latestCalculation = nil
                 notifyError()
             }
         }
@@ -734,7 +748,7 @@ struct CalculatorView: View {
                     Text(drugName)
                         .font(.headline)
                 }
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
+                VStack(spacing: 4) {
                     Text(String(format: "%.0f%%", output.compliancePct))
                         .font(.system(.largeTitle, design: .rounded).weight(.bold))
                         .foregroundStyle(colorForCompliance(output.compliancePct))
@@ -744,6 +758,7 @@ struct CalculatorView: View {
                         .font(.headline)
                         .foregroundStyle(.secondary)
                 }
+                .frame(maxWidth: .infinity, alignment: .center)
                 Divider()
                 VStack(alignment: .leading, spacing: 10) {
                     metricRow(title: "Expected doses", value: String(format: "%.0f", output.expectedDoses))
@@ -764,12 +779,32 @@ struct CalculatorView: View {
                 .gaugeStyle(.accessoryLinear)
                 .animation(.spring(response: 0.5, dampingFraction: 0.8), value: output.compliancePct)
                 if !output.flags.isEmpty {
-                    Text("Flags: \(output.flags.joined(separator: ", "))")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    let friendlyFlags = output.flagDescriptions
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Flags")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        ForEach(Array(friendlyFlags.enumerated()), id: \.offset) { item in
+                            Text("• \(item.element)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
-                if drugName == nil && showExplain {
-                    complianceEquationView(output: output)
+                if drugName == nil {
+                    if showExplain {
+                        quickExplainSummary(output: output)
+                    } else if let calc = latestCalculation {
+                        NavigationLink {
+                            ExplainabilityView(calculation: calc)
+                        } label: {
+                            Label("View detailed breakdown", systemImage: "list.bullet.rectangle")
+                                .font(.subheadline.weight(.semibold))
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(colorForCompliance(output.compliancePct))
+                    }
                 }
             }
             .padding(18)
@@ -777,52 +812,37 @@ struct CalculatorView: View {
     }
 
     @ViewBuilder
-    private func complianceEquationView(output: ComplianceOutputs) -> some View {
-        VStack(alignment: .center, spacing: 10) {
-            Text("How we calculated this")
+    private func quickExplainSummary(output: ComplianceOutputs) -> some View {
+        VStack(alignment: .center, spacing: 12) {
+            Text("Quick breakdown")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 8) {
-                    equationToken(title: nil, value: "Compliance")
-                    equationOperator("=")
-                    equationToken(title: "Actual", value: String(format: "%.0f", output.actualDoses), isNumeric: true)
-                    equationOperator("÷")
-                    equationToken(title: "Expected", value: String(format: "%.0f", output.expectedDoses), isNumeric: true)
-                    equationOperator("×")
-                    equationToken(title: nil, value: "100", isNumeric: true)
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
-
-                VStack(spacing: 8) {
-                    HStack(spacing: 8) {
-                        equationToken(title: nil, value: "Compliance")
-                        equationOperator("=")
-                    }
-                    .frame(maxWidth: .infinity, alignment: .center)
-
-                    HStack(spacing: 8) {
-                        equationToken(title: "Actual", value: String(format: "%.0f", output.actualDoses), isNumeric: true)
-                        equationOperator("÷")
-                        equationToken(title: "Expected", value: String(format: "%.0f", output.expectedDoses), isNumeric: true)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .center)
-
-                    HStack(spacing: 8) {
-                        equationOperator("×")
-                        equationToken(title: nil, value: "100", isNumeric: true)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .center)
-                }
-            }
-            Text(String(format: "= %.0f%%", output.compliancePct))
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(colorForCompliance(output.compliancePct))
-                .monospacedDigit()
-            Text("Actual doses follow dispensed − returned − missed + extra. Expected doses reflect frequency × effective days, adjusting for holds and edge-day overrides.")
-                .font(.caption2)
+                .frame(maxWidth: .infinity)
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
+            VStack(alignment: .center, spacing: 6) {
+                Text("Actual = (Dispensed − Returned) − Missed + Extra")
+                Text("Expected = Daily goal × Effective days (holds & overrides applied)")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
+            .multilineTextAlignment(.center)
+
+            if let calc = latestCalculation {
+                NavigationLink {
+                    ExplainabilityView(calculation: calc)
+                } label: {
+                    Label("View detailed breakdown", systemImage: "list.bullet.rectangle")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(colorForCompliance(output.compliancePct))
+            } else {
+                Text("Run a calculation to view the full breakdown.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
         }
     }
 
@@ -837,39 +857,6 @@ struct CalculatorView: View {
                 .font(.headline)
                 .monospacedDigit()
         }
-    }
-
-    @ViewBuilder
-    private func equationOperator(_ symbol: String) -> some View {
-        Text(symbol)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 4)
-    }
-
-    @ViewBuilder
-    private func equationToken(title: String?, value: String, isNumeric: Bool = false) -> some View {
-        VStack(spacing: 2) {
-            if isNumeric {
-                Text(value)
-                    .font(.caption.weight(.semibold))
-                    .monospacedDigit()
-            } else {
-                Text(value)
-                    .font(.caption.weight(.semibold))
-            }
-            if let title, !title.isEmpty {
-                Text(title)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(.regularMaterial)
-        )
     }
 
     @ViewBuilder

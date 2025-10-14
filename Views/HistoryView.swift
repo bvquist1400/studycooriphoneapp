@@ -111,7 +111,7 @@ struct HistoryView: View {
         Missed: \(c.missedDoses)  Extra: \(c.extraDoses)  Hold days: \(c.holdDays)
         Expected: \(String(format: "%.2f", c.expectedDoses))  Actual: \(String(format: "%.2f", c.actualDoses))
         Compliance: \(String(format: "%.1f%%", c.compliancePct))
-        Flags: \(c.flags.joined(separator: ", "))
+        Flags: \(friendlyFlags(for: c).joined(separator: ", "))
         Created: \(c.createdAt.formatted())
         """
     }
@@ -148,7 +148,7 @@ struct HistoryView: View {
                 String(format: "%.2f", c.expectedDoses),
                 String(format: "%.2f", c.actualDoses),
                 String(format: "%.1f", c.compliancePct),
-                c.flags.joined(separator: ";"),
+                friendlyFlags(for: c).joined(separator: ";"),
                 df.string(from: c.createdAt),
                 c.drugName ?? ""
             ]
@@ -161,6 +161,10 @@ struct HistoryView: View {
         }
         return lines.joined(separator: "\n")
     }
+
+private func friendlyFlags(for calculation: Calculation) -> [String] {
+    calculation.flags.map { ComplianceOutputs.description(for: $0) }
+}
 
     private func write(content: String, suggestedName: String, fileExtension: String) -> URL? {
         let formatter = DateFormatter()
@@ -216,15 +220,94 @@ struct HistoryView: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
-            Text(String(format: "Compliance: %.1f%%", calc.compliancePct))
-                .font(.subheadline)
-                .padding(.vertical, 4)
-                .padding(.horizontal, 8)
-                .background(
-                    Capsule().fill(colorForCompliance(calc.compliancePct).opacity(0.12))
-                )
-                .foregroundStyle(colorForCompliance(calc.compliancePct))
+            HStack {
+                Text(String(format: "%.1f%%", calc.compliancePct))
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.vertical, 4)
+                    .padding(.horizontal, 8)
+                    .background(
+                        Capsule().fill(colorForCompliance(calc.compliancePct).opacity(0.12))
+                    )
+                    .foregroundStyle(colorForCompliance(calc.compliancePct))
+
+                let friendlyFlags = calc.flags.map { ComplianceOutputs.description(for: $0) }
+                if !friendlyFlags.isEmpty {
+                    WrapRow(friendlyFlags) { flag in
+                        Text(flag)
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(.thinMaterial, in: Capsule())
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
         }
+    }
+}
+
+private struct WrapRow<Data: RandomAccessCollection, Content: View>: View where Data.Element: Hashable {
+    let data: Data
+    let content: (Data.Element) -> Content
+
+    init(_ data: Data, @ViewBuilder content: @escaping (Data.Element) -> Content) {
+        self.data = data
+        self.content = content
+    }
+
+    var body: some View {
+        FlexibleWrapView(data: data, spacing: 8, content: content)
+    }
+}
+
+private struct FlexibleWrapView<Data: RandomAccessCollection, Content: View>: View where Data.Element: Hashable {
+    let data: Data
+    let spacing: CGFloat
+    let content: (Data.Element) -> Content
+
+    @State private var sizes: [Data.Element: CGSize] = [:]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: spacing) {
+            let rows = computeRows()
+            ForEach(Array(rows.enumerated()), id: \.offset) { row in
+                HStack(spacing: spacing) {
+                    ForEach(row.element, id: \.self) { element in
+                        content(element)
+                            .fixedSize()
+                            .background(
+                                GeometryReader { geo in
+                                    Color.clear
+                                        .onAppear {
+                                            sizes[element] = geo.size
+                                        }
+                                }
+                            )
+                    }
+                }
+            }
+        }
+    }
+
+    private func computeRows() -> [[Data.Element]] {
+        guard !data.isEmpty else { return [] }
+        var rows: [[Data.Element]] = [[]]
+        var currentWidth: CGFloat = 0
+        let maxWidth = 240.0
+
+        for element in data {
+            let elementSize = sizes[element, default: .zero]
+            let width = elementSize.width == 0 ? maxWidth : elementSize.width
+            let tentativeWidth = currentWidth == 0 ? width : currentWidth + spacing + width
+            if tentativeWidth > maxWidth, !rows[rows.count - 1].isEmpty {
+                rows.append([element])
+                currentWidth = width
+            } else {
+                rows[rows.count - 1].append(element)
+                currentWidth = tentativeWidth
+            }
+        }
+        return rows
     }
 }
 

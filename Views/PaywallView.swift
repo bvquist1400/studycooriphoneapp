@@ -5,9 +5,15 @@ import StoreKit
 
 struct PaywallView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @AppStorage("proUnlocked") private var proUnlocked = false // Dev fallback when StoreKit not available
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var purchases: PurchaseManager
     @State private var billing: Billing = .monthly
+    private let onUnlock: (() -> Void)?
+    @State private var hasHandledUnlock = false
+
+    init(onUnlock: (() -> Void)? = nil) {
+        self.onUnlock = onUnlock
+    }
 
     enum Billing: String, CaseIterable, Identifiable { case monthly, yearly; var id: String { rawValue } }
 
@@ -117,8 +123,9 @@ struct PaywallView: View {
                                     if hasStoreKit {
                                         await purchases.purchase(monthly: billing == .monthly)
                                     } else {
-                                        // Dev fallback
-                                        proUnlocked = true
+#if DEBUG
+                                        await MainActor.run { purchases.applyDebugOverride(true) }
+#endif
                                     }
                                 }
                             } label: {
@@ -134,7 +141,13 @@ struct PaywallView: View {
 
                             Button("Restore Purchase") {
                                 Task {
-                                    if hasStoreKit { await purchases.restorePurchases() } else { proUnlocked = true }
+                                    if hasStoreKit {
+                                        await purchases.restorePurchases()
+                                    } else {
+#if DEBUG
+                                        await MainActor.run { purchases.applyDebugOverride(true) }
+#endif
+                                    }
                                 }
                             }
                                 .font(.subheadline)
@@ -159,6 +172,13 @@ struct PaywallView: View {
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                             .padding(.top, 4)
+#if DEBUG
+                        if purchases.isDebugOverrideActive {
+                            Text("Debug override active — Pro unlocked without StoreKit.")
+                                .font(.caption2)
+                                .foregroundStyle(.yellow)
+                        }
+#endif
                     }
                     .padding(.horizontal)
                     .padding(.vertical, 16)
@@ -168,7 +188,25 @@ struct PaywallView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color(.systemBackground), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
+            .onAppear {
+                hasHandledUnlock = false
+                handleUnlockIfNeeded(for: purchases.isProUnlocked)
+            }
             .task { await purchases.loadProducts() }
+            .onReceive(purchases.$isProUnlocked) { isUnlocked in
+                handleUnlockIfNeeded(for: isUnlocked)
+            }
+        }
+    }
+
+    private func handleUnlockIfNeeded(for isUnlocked: Bool) {
+        guard isUnlocked, !hasHandledUnlock else { return }
+        hasHandledUnlock = true
+        Task { @MainActor in
+            if let onUnlock {
+                onUnlock()
+            }
+            dismiss()
         }
     }
 

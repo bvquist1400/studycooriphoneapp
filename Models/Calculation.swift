@@ -23,6 +23,7 @@ final class Calculation {
     var actualDoses: Double
     var compliancePct: Double
     var flags: [String]
+    var breakdown: ComplianceBreakdown?
 
     // Metadata
     var createdAt: Date
@@ -52,6 +53,7 @@ final class Calculation {
         actualDoses: Double = 0,
         compliancePct: Double = 0,
         flags: [String] = [],
+        breakdown: ComplianceBreakdown? = nil,
         createdAt: Date = Date(),
         drugName: String? = nil,
         bottles: [Bottle] = []
@@ -73,6 +75,7 @@ final class Calculation {
         self.actualDoses = actualDoses
         self.compliancePct = compliancePct
         self.flags = flags
+        self.breakdown = breakdown
         self.createdAt = createdAt
         self.drugName = drugName
         self.bottles = bottles
