@@ -16,7 +16,6 @@
 		EB9F3EC32E6255960095AA49 /* DosingFrequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB9F3EC22E6255960095AA49 /* DosingFrequency.swift */; };
 		EB9F3EC42E6255A60095AA49 /* ComplianceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB9F3EB52E624E8D0095AA49 /* ComplianceEngine.swift */; };
 		EBBOTTLEB2E7000000000001 /* Bottle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBBOTTLEA2E7000000000001 /* Bottle.swift */; };
-		EBCALCDETB2E8000000000001 /* CalculationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBCALCDETA2E8000000000001 /* CalculationDetailView.swift */; };
 		EBF00021A2E9000000000001 /* Study.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBF00010A2E9000000000001 /* Study.swift */; };
 		EBF00022A2E9000000000002 /* Subject.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBF00010A2E9000000000002 /* Subject.swift */; };
 		EBF00023A2E9000000000003 /* StudiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBF00010A2E9000000000003 /* StudiesView.swift */; };
@@ -62,7 +61,6 @@
 		EB9F3EBA2E624EDB0095AA49 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		EB9F3EC22E6255960095AA49 /* DosingFrequency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DosingFrequency.swift; sourceTree = "<group>"; };
 		EBBOTTLEA2E7000000000001 /* Bottle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bottle.swift; sourceTree = "<group>"; };
-		EBCALCDETA2E8000000000001 /* CalculationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalculationDetailView.swift; sourceTree = "<group>"; };
 		EBF00010A2E9000000000001 /* Study.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Study.swift; sourceTree = "<group>"; };
 		EBF00010A2E9000000000002 /* Subject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Subject.swift; sourceTree = "<group>"; };
 		EBF00010A2E9000000000003 /* StudiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudiesView.swift; sourceTree = "<group>"; };
@@ -173,7 +171,6 @@
 				EB9F3EB92E624ED10095AA49 /* HistoryView.swift */,
 				EB9F3EB82E624EC50095AA49 /* CalculatorView.swift */,
 				EB9F3EB72E624EAE0095AA49 /* RootView.swift */,
-				EBCALCDETA2E8000000000001 /* CalculationDetailView.swift */,
 				EBF00010A2E9000000000003 /* StudiesView.swift */,
 				EBF00010A2E9000000000004 /* StudyDetailView.swift */,
 				EBF00010A2E9000000000005 /* SubjectDetailView.swift */,
@@ -358,7 +355,6 @@
 				EB9F3EC12E62541F0095AA49 /* SettingsView.swift in Sources */,
 				EB9F3EBE2E62520A0095AA49 /* Calculation.swift in Sources */,
 				EBBOTTLEB2E7000000000001 /* Bottle.swift in Sources */,
-				EBCALCDETB2E8000000000001 /* CalculationDetailView.swift in Sources */,
 				EBF00021A2E9000000000001 /* Study.swift in Sources */,
 				EBF00022A2E9000000000002 /* Subject.swift in Sources */,
 				EBF00023A2E9000000000003 /* StudiesView.swift in Sources */,

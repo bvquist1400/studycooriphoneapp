@@ -26,7 +26,7 @@ struct SubjectDetailView: View {
                         .foregroundStyle(.secondary)
                 }
                 ForEach(calcs) { c in
-                    NavigationLink(destination: CalculationDetailView(calculation: c)) {
+                    NavigationLink(destination: ExplainabilityView(calculation: c)) {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("\(c.startDate.formatted(date: .abbreviated, time: .omitted)) → \(c.endDate.formatted(date: .abbreviated, time: .omitted))")
                                 .font(.subheadline)

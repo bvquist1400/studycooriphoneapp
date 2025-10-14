@@ -23,7 +23,7 @@ Single source of truth for what’s done and what’s next. Keep this file up to
 ## 📋 Upcoming Major Tasks
 
 - **Explainability View & Engine Tests**
-  - Detailed “How we calculated this” breakdown
+  - Detailed “How we calculated this” breakdown ✅
   - Add scenarios for PRN, edge-day overrides, compliance clamps
 
 - **Reporting & Export Enhancements**
