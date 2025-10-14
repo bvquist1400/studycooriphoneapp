@@ -8,6 +8,7 @@ struct ExplainabilityView: View {
             VStack(spacing: 18) {
                 if let breakdown {
                     expectedCard(breakdown: breakdown)
+                    stepByStepCard(breakdown: breakdown)
                     actualCard(breakdown: breakdown)
                 } else {
                     legacyInputsCard
@@ -47,9 +48,19 @@ struct ExplainabilityView: View {
         ComplianceEngine.daysBetweenInclusive(from: calculation.startDate, to: calculation.endDate, calendar: .current)
     }
     private var effectiveDays: Int { max(0, days - calculation.holdDays) }
+    private var periodText: String {
+        let start = Self.dayFormatter.string(from: calculation.startDate)
+        let end = Self.dayFormatter.string(from: calculation.endDate)
+        if start == end { return start }
+        return "\(start) → \(end)"
+    }
 
     private func format(_ value: Double) -> String {
         String(format: "%.2f", value)
+    }
+
+    private func formatPercent(_ value: Double) -> String {
+        String(format: "%.1f%%", value)
     }
 
     private func adjustmentText(_ adjustment: Double) -> String {
@@ -60,6 +71,107 @@ struct ExplainabilityView: View {
 
     private var friendlyFlags: [String] {
         calculation.flags.map { ComplianceOutputs.description(for: $0) }
+    }
+
+    private func computationSteps(for breakdown: ComplianceBreakdown) -> [(title: String, detail: String)] {
+        var steps: [(String, String)] = []
+
+        steps.append((
+            "Count the study days",
+            "\(periodText) covers \(breakdown.expected.inclusiveDays) day\(breakdown.expected.inclusiveDays == 1 ? "" : "s") inclusive."
+        ))
+
+        if breakdown.expected.holdDays > 0 {
+            steps.append((
+                "Remove hold days",
+                "Subtract \(breakdown.expected.holdDays) hold day\(breakdown.expected.holdDays == 1 ? "" : "s") → \(breakdown.expected.effectiveDays) effective day\(breakdown.expected.effectiveDays == 1 ? "" : "s")."
+            ))
+        } else {
+            steps.append((
+                "Confirm effective days",
+                "No hold days were supplied, so effective days remain \(breakdown.expected.effectiveDays)."
+            ))
+        }
+
+        if calculation.frequency == .prn {
+            let target = breakdown.expected.prnTargetPerDay ?? 0
+            steps.append((
+                "Apply PRN target",
+                "\(format(target)) target dose\(target == 1 ? "" : "s") per day × \(breakdown.expected.effectiveDays) day\(breakdown.expected.effectiveDays == 1 ? "" : "s") = \(format(breakdown.expected.baseExpected))."
+            ))
+        } else {
+            let perDay = breakdown.expected.baseDosesPerDay
+            steps.append((
+                "Daily schedule",
+                "\(calculation.frequency.rawValue) expects \(format(perDay)) dose\(perDay == 1 ? "" : "s") per day × \(breakdown.expected.effectiveDays) day\(breakdown.expected.effectiveDays == 1 ? "" : "s") = \(format(breakdown.expected.baseExpected))."
+            ))
+        }
+
+        var edgeAdjustments: [String] = []
+        if breakdown.expected.firstDayAdjustment != 0 {
+            edgeAdjustments.append("first day \(adjustmentText(breakdown.expected.firstDayAdjustment))")
+        }
+        if breakdown.expected.lastDayAdjustment != 0 {
+            edgeAdjustments.append("last day \(adjustmentText(breakdown.expected.lastDayAdjustment))")
+        }
+        if !edgeAdjustments.isEmpty {
+            steps.append((
+                "Edge-day overrides",
+                edgeAdjustments.joined(separator: ", ") + " → \(format(breakdown.expected.totalExpected)) total expected doses."
+            ))
+        } else {
+            steps.append((
+                "Expected total",
+                "No edge-day overrides were applied, so total expected remains \(format(breakdown.expected.totalExpected))."
+            ))
+        }
+
+        let actualFormula = "\(format(breakdown.actual.dispensed)) − \(format(breakdown.actual.returned)) − \(format(breakdown.actual.missed)) + \(format(breakdown.actual.extra)) = \(format(breakdown.actual.rawActual))."
+        steps.append((
+            "Aggregate actual usage",
+            "Dispensed minus returned minus missed plus extra → \(actualFormula)"
+        ))
+
+        if !breakdown.actual.partialDosesEnabled {
+            steps.append((
+                "Round whole doses",
+                "Partial doses disabled, so round \(format(breakdown.actual.rawActual)) → \(format(breakdown.actual.afterRounding))."
+            ))
+        }
+
+        if breakdown.actual.afterRounding != breakdown.actual.afterClamping {
+            steps.append((
+                "Clamp below zero",
+                "Prevent negative totals by clamping \(format(breakdown.actual.afterRounding)) → \(format(breakdown.actual.afterClamping))."
+            ))
+        }
+
+        if breakdown.expected.totalExpected == 0 {
+            if breakdown.actual.afterClamping == 0 {
+                steps.append((
+                    "Compute compliance",
+                    "Both expected and actual are zero, so compliance defaults to 100%."
+                ))
+            } else {
+                steps.append((
+                    "Compute compliance",
+                    "Expected is zero but actual is \(format(breakdown.actual.afterClamping)); compliance defaults to 0%."
+                ))
+            }
+        } else {
+            let rawPercent = (breakdown.actual.afterClamping / breakdown.expected.totalExpected) * 100
+            var detail = "\(format(breakdown.actual.afterClamping)) ÷ \(format(breakdown.expected.totalExpected)) = \(formatPercent(rawPercent))."
+            let displayed = calculation.compliancePct
+            if abs(rawPercent - displayed) > 0.05 {
+                detail += " Clamped to \(formatPercent(displayed))."
+            }
+            steps.append((
+                "Compute compliance",
+                detail
+            ))
+        }
+
+        return steps
     }
 
     @ViewBuilder
@@ -92,6 +204,24 @@ struct ExplainabilityView: View {
             StatRow(label: "Total expected", value: format(breakdown.expected.totalExpected), highlight: true)
         } footer: {
             Text("Base expected equals daily goal × effective days. Edge-day overrides adjust the start and/or finish to match study expectations.")
+        }
+    }
+
+    @ViewBuilder
+    private func stepByStepCard(breakdown: ComplianceBreakdown) -> some View {
+        let steps = computationSteps(for: breakdown)
+        explainabilityCard(
+            title: "Step-by-Step",
+            systemImage: "list.number"
+        ) {
+            ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
+                StepRow(number: index + 1, title: step.title, detail: step.detail)
+                if index != steps.count - 1 {
+                    Divider()
+                }
+            }
+        } footer: {
+            Text("These steps mirror the compliance engine so you can audit how expected and actual doses feed into the final percentage.")
         }
     }
 
@@ -230,6 +360,37 @@ struct ExplainabilityView: View {
         )
     }
 
+    private struct StepRow: View {
+        let number: Int
+        let title: String
+        let detail: String
+
+        private let numberColumnWidth: CGFloat = 32
+        private let gutter: CGFloat = 12
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: gutter) {
+                    Text("\(number).")
+                        .font(.system(size: 15, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                        .frame(width: numberColumnWidth, alignment: .trailing)
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                Text(detail)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, numberColumnWidth + gutter)
+            }
+        }
+    }
+
     private struct StatRow: View {
         let label: String
         let value: String
@@ -344,4 +505,11 @@ struct ExplainabilityView: View {
             return rows
         }
     }
+
+    private static let dayFormatter: DateFormatter = {
+        let df = DateFormatter()
+        df.dateStyle = .medium
+        df.timeStyle = .none
+        return df
+    }()
 }
