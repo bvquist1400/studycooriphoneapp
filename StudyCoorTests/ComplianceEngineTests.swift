@@ -88,6 +88,36 @@ final class ComplianceEngineTests: XCTestCase {
         XCTAssertEqual(out.breakdown.actual.rawActual, 5, accuracy: 0.001)
     }
 
+    func testPRN_TargetAndHoldDaysClampsCompliance() throws {
+        let start = ISO8601DateFormatter().date(from: "2025-06-01T00:00:00Z")!
+        let end   = ISO8601DateFormatter().date(from: "2025-06-05T00:00:00Z")!
+        let inputs = ComplianceInputs(
+            dispensed: 12, returned: 0,
+            startDate: start, endDate: end,
+            frequency: .prn,
+            missedDoses: 0, extraDoses: 0, holdDays: 1,
+            partialDoseEnabled: true,
+            prnTargetPerDay: 1.5
+        )
+        let out = try ComplianceEngine.compute(inputs)
+
+        XCTAssertEqual(out.expectedDoses, 6, accuracy: 0.001)
+        XCTAssertEqual(out.actualDoses, 12, accuracy: 0.001)
+        XCTAssertEqual(out.compliancePct, 150, accuracy: 0.001)
+        XCTAssertTrue(out.flags.contains("OVERUSE"))
+
+        XCTAssertEqual(out.breakdown.expected.inclusiveDays, 5)
+        XCTAssertEqual(out.breakdown.expected.holdDays, 1)
+        XCTAssertEqual(out.breakdown.expected.effectiveDays, 4)
+        XCTAssertEqual(out.breakdown.expected.baseExpected, 6, accuracy: 0.001)
+        let prnTarget = try XCTUnwrap(out.breakdown.expected.prnTargetPerDay)
+        XCTAssertEqual(prnTarget, 1.5, accuracy: 0.001)
+        XCTAssertEqual(out.breakdown.expected.totalExpected, 6, accuracy: 0.001)
+        XCTAssertEqual(out.breakdown.actual.rawActual, 12, accuracy: 0.001)
+        XCTAssertEqual(out.breakdown.actual.afterRounding, 12, accuracy: 0.001)
+        XCTAssertEqual(out.breakdown.actual.afterClamping, 12, accuracy: 0.001)
+    }
+
     func testPartialRoundingBehavior() throws {
         let start = ISO8601DateFormatter().date(from: "2025-01-01T00:00:00Z")!
         let end   = ISO8601DateFormatter().date(from: "2025-01-07T00:00:00Z")!
@@ -137,6 +167,27 @@ final class ComplianceEngineTests: XCTestCase {
         let out = try ComplianceEngine.compute(inputs)
         XCTAssertTrue(out.flags.contains("UNDERUSE"))
         XCTAssertEqual(out.flagDescriptions, ["Usage below 90% — investigate missed doses"])
+    }
+
+    func testComplianceClampsToZeroWhenActualNegative() throws {
+        let start = ISO8601DateFormatter().date(from: "2025-07-01T00:00:00Z")!
+        let end   = ISO8601DateFormatter().date(from: "2025-07-03T00:00:00Z")!
+        let inputs = ComplianceInputs(
+            dispensed: 0, returned: 0,
+            startDate: start, endDate: end,
+            frequency: .bid,
+            missedDoses: 10, extraDoses: 0, holdDays: 0,
+            partialDoseEnabled: false
+        )
+
+        let out = try ComplianceEngine.compute(inputs)
+        XCTAssertEqual(out.expectedDoses, 6, accuracy: 0.001)
+        XCTAssertEqual(out.actualDoses, 0, accuracy: 0.001)
+        XCTAssertEqual(out.compliancePct, 0, accuracy: 0.001)
+        XCTAssertTrue(out.flags.contains("UNDERUSE"))
+        XCTAssertEqual(out.breakdown.actual.rawActual, -10, accuracy: 0.001)
+        XCTAssertEqual(out.breakdown.actual.afterRounding, -10, accuracy: 0.001)
+        XCTAssertEqual(out.breakdown.actual.afterClamping, 0, accuracy: 0.001)
     }
 
     func testValidation_ReturnedExceedsDispensed() {
