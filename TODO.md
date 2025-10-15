@@ -24,7 +24,7 @@ Single source of truth for what’s done and what’s next. Keep this file up to
 
 - **Explainability View & Engine Tests**
   - Detailed “How we calculated this” breakdown ✅
-  - Add scenarios for PRN, edge-day overrides, compliance clamps
+  - Add scenarios for PRN, edge-day overrides, compliance clamps ✅
 
 - **Reporting & Export Enhancements**
   - CSV export per calculation + selection with UIActivityViewController
