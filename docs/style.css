@@ -1,0 +1,221 @@
+/* StudyCoor Documentation Styles */
+
+:root {
+    --primary-color: #007AFF;
+    --secondary-color: #5856D6;
+    --text-color: #1c1c1e;
+    --text-secondary: #48484a;
+    --background: #ffffff;
+    --border-color: #d1d1d6;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text-color: #ffffff;
+        --text-secondary: #aeaeb2;
+        --background: #000000;
+        --border-color: #38383a;
+    }
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--background);
+    padding: 20px;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1 {
+    font-size: 2.5em;
+    color: var(--primary-color);
+    margin-bottom: 0.5em;
+    padding-bottom: 0.3em;
+    border-bottom: 3px solid var(--primary-color);
+}
+
+h2 {
+    font-size: 1.8em;
+    color: var(--text-color);
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+h3 {
+    font-size: 1.3em;
+    color: var(--text-color);
+    margin-top: 1.2em;
+    margin-bottom: 0.4em;
+}
+
+h4 {
+    font-size: 1.1em;
+    color: var(--text-secondary);
+    margin-top: 1em;
+    margin-bottom: 0.3em;
+}
+
+p {
+    margin-bottom: 1em;
+    color: var(--text-color);
+}
+
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+
+a:hover {
+    opacity: 0.7;
+    text-decoration: underline;
+}
+
+ul, ol {
+    margin-left: 2em;
+    margin-bottom: 1em;
+}
+
+li {
+    margin-bottom: 0.5em;
+    color: var(--text-color);
+}
+
+strong {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+em {
+    font-style: italic;
+}
+
+code {
+    background-color: var(--border-color);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+    font-size: 0.9em;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 2em;
+    padding-bottom: 2em;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.header .subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1em;
+    margin-top: 0.5em;
+}
+
+.meta {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    margin-bottom: 2em;
+    padding: 1em;
+    background-color: var(--border-color);
+    border-radius: 8px;
+}
+
+.footer {
+    margin-top: 4em;
+    padding-top: 2em;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.footer p {
+    margin-bottom: 0.5em;
+}
+
+.nav {
+    text-align: center;
+    margin-bottom: 2em;
+}
+
+.nav a {
+    display: inline-block;
+    margin: 0 1em;
+    padding: 0.5em 1em;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.nav a:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+    text-decoration: none;
+}
+
+.highlight {
+    background-color: rgba(0, 122, 255, 0.1);
+    padding: 1em;
+    border-left: 4px solid var(--primary-color);
+    margin: 1.5em 0;
+    border-radius: 4px;
+}
+
+.section {
+    margin-bottom: 2em;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5em 0;
+}
+
+th, td {
+    padding: 0.75em;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+th {
+    font-weight: 600;
+    color: var(--text-color);
+    background-color: var(--border-color);
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .container {
+        padding: 10px;
+    }
+
+    h1 {
+        font-size: 2em;
+    }
+
+    h2 {
+        font-size: 1.5em;
+    }
+
+    .nav a {
+        display: block;
+        margin: 0.5em 0;
+    }
+}
