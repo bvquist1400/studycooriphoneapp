@@ -262,8 +262,8 @@ struct CalculatorView: View {
                     record.breakdown = out.breakdown
                     record.createdAt = .now
                     record.bottles = models
-                    record.subject = selectedSubject
-                    record.study = selectedStudy
+                    record.subjectUUID = selectedSubject?.uuid
+                    record.studyUUID = selectedStudy?.uuid
                     ctx.insert(record)
                 } catch {
                     encounteredError = error
@@ -344,8 +344,8 @@ struct CalculatorView: View {
                 record.breakdown = out.breakdown
                 record.createdAt = .now
                 record.bottles = bottleModels
-                record.subject = selectedSubject
-                record.study = selectedStudy
+                record.subjectUUID = selectedSubject?.uuid
+                record.studyUUID = selectedStudy?.uuid
                 ctx.insert(record)
                 try ctx.save()
                 latestCalculation = record
@@ -483,6 +483,8 @@ struct CalculatorView: View {
         Section("Subject (optional)") {
             TextField("Subject ID", text: $subjectId)
                 .textInputAutocapitalization(.characters)
+                .accessibilityLabel("Subject ID")
+                .accessibilityHint("Enter the subject or participant identifier code")
         }
     }
 
@@ -510,7 +512,11 @@ struct CalculatorView: View {
     private var periodSection: some View {
         Section("Period") {
             DatePicker("Start", selection: $startDate, displayedComponents: .date)
+                .accessibilityLabel("Study start date")
+                .accessibilityHint("Select the first day of the medication period")
             DatePicker("End", selection: $endDate, displayedComponents: .date)
+                .accessibilityLabel("Study end date")
+                .accessibilityHint("Select the last day of the medication period")
         }
     }
 
@@ -522,14 +528,21 @@ struct CalculatorView: View {
                     Text(f.rawValue).tag(f)
                 }
             }
+            .accessibilityLabel("Dosing frequency")
+            .accessibilityValue(frequency.rawValue)
+            .accessibilityHint("Select how often medication is taken: once daily, twice daily, three times daily, four times daily, or as needed")
             if frequency == .prn {
                 TextField("PRN target doses/day (optional)", text: $prnTargetPerDay)
                     .keyboardType(.decimalPad)
                     .focused($focusedField, equals: .prnTarget)
                     .id(FocusTarget.prnTarget)
                     .numericValidation(text: $prnTargetPerDay, allowPartials: true)
+                    .accessibilityLabel("PRN target doses per day")
+                    .accessibilityHint("Enter the target number of as-needed doses per day for compliance calculation")
             }
             Toggle("Allow partial doses", isOn: $partials)
+                .accessibilityLabel("Allow partial doses")
+                .accessibilityHint(partials ? "Partial doses enabled. Fractional pill counts will be preserved" : "Partial doses disabled. Pill counts will be rounded to whole numbers")
         }
     }
 
@@ -582,11 +595,15 @@ struct CalculatorView: View {
                                 .focused($focusedField, equals: .bottle(bottleID, .dispensed))
                                 .id(FocusTarget.bottle(bottleID, .dispensed))
                                 .numericValidation(text: bottle.dispensed, allowPartials: partials)
+                                .accessibilityLabel("Dispensed from this bottle")
+                                .accessibilityHint("Enter pills dispensed from this bottle")
                             TextField("Returned", text: bottle.returned)
                                 .keyboardType(.decimalPad)
                                 .focused($focusedField, equals: .bottle(bottleID, .returned))
                                 .id(FocusTarget.bottle(bottleID, .returned))
                                 .numericValidation(text: bottle.returned, allowPartials: partials)
+                                .accessibilityLabel("Returned from this bottle")
+                                .accessibilityHint("Enter pills returned from this bottle")
                         }
                         .textFieldStyle(.roundedBorder)
                     }
@@ -595,6 +612,8 @@ struct CalculatorView: View {
                     Button { bottles.append(BottleInput()) } label: {
                         Label("Add Bottle", systemImage: "plus.circle.fill")
                     }
+                    .accessibilityLabel("Add bottle")
+                    .accessibilityHint("Creates a new bottle entry for tracking individual dispensing and returns")
                 }
             } header: {
                 Label("Bottles", systemImage: "shippingbox")
@@ -669,16 +688,22 @@ struct CalculatorView: View {
                 .focused($focusedField, equals: .quickTotals(.missed))
                 .id(FocusTarget.quickTotals(.missed))
                 .numericValidation(text: $missed, allowPartials: partials)
+                .accessibilityLabel("Missed doses")
+                .accessibilityHint("Enter doses that were expected but not taken by the subject")
             TextField("Extra doses (taken beyond schedule, optional)", text: $extra)
                 .keyboardType(.decimalPad)
                 .focused($focusedField, equals: .quickTotals(.extra))
                 .id(FocusTarget.quickTotals(.extra))
                 .numericValidation(text: $extra, allowPartials: partials)
+                .accessibilityLabel("Extra doses")
+                .accessibilityHint("Enter doses taken beyond the scheduled regimen")
             TextField("Hold days (days paused, optional)", text: $holdDays)
                 .keyboardType(.numberPad)
                 .focused($focusedField, equals: .quickTotals(.holdDays))
                 .id(FocusTarget.quickTotals(.holdDays))
                 .integerValidation(text: $holdDays)
+                .accessibilityLabel("Hold days")
+                .accessibilityHint("Enter the number of days medication was paused or interrupted")
         } header: {
             Label("Adjustments", systemImage: "slider.horizontal.2.square")
         } footer: {
@@ -702,6 +727,8 @@ struct CalculatorView: View {
                     .foregroundStyle(.white)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Calculate compliance")
+            .accessibilityHint("Computes medication compliance percentage based on entered values")
         }
     }
 
@@ -709,7 +736,7 @@ struct CalculatorView: View {
     private var quickTotalsSection: some View {
         if (selectedStudy?.multiDrug != true) || ((selectedStudy?.drugs.isEmpty) ?? true) {
             Section {
-                Text("Use when you’re not itemizing bottles.")
+                Text("Use when you're not itemizing bottles.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 TextField("Dispensed (tabs)", text: $dispensed)
@@ -717,11 +744,15 @@ struct CalculatorView: View {
                     .focused($focusedField, equals: .quickTotals(.dispensed))
                     .id(FocusTarget.quickTotals(.dispensed))
                     .numericValidation(text: $dispensed, allowPartials: partials)
+                    .accessibilityLabel("Dispensed pills")
+                    .accessibilityHint("Enter the total number of pills dispensed to the subject")
                 TextField("Returned (tabs)", text: $returned)
                     .keyboardType(.decimalPad)
                     .focused($focusedField, equals: .quickTotals(.returned))
                     .id(FocusTarget.quickTotals(.returned))
                     .numericValidation(text: $returned, allowPartials: partials)
+                    .accessibilityLabel("Returned pills")
+                    .accessibilityHint("Enter the number of pills returned by the subject")
             } header: {
                 Label("Quick Totals", systemImage: "sum")
             } footer: {
@@ -763,6 +794,9 @@ struct CalculatorView: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Compliance result")
+                .accessibilityValue("\(String(format: "%.0f", output.compliancePct)) percent" + (output.compliancePct < 90 ? ". Below target - usage underperformance" : output.compliancePct > 110 ? ". Above target - possible overadherence" : ". Within target range"))
                 Divider()
                 VStack(alignment: .leading, spacing: 10) {
                     metricRow(title: "Expected doses", value: String(format: "%.0f", output.expectedDoses))
@@ -1000,32 +1034,21 @@ struct CalculatorView: View {
         }
 
         do {
+            let studyUUID = study.uuid
             var accumulator: [PersistentIdentifier: (total: Double, count: Int)] = [:]
-            var didMutate = false
             for subject in subjects {
                 let code = subject.code
+                let subjectUUID = subject.uuid
                 let descriptor = FetchDescriptor<Calculation>(
                     predicate: #Predicate {
-                        ($0.subject == subject) ||
-                        ($0.subject == nil && $0.subjectId == code && $0.study == study)
+                        ($0.subjectUUID == subjectUUID) ||
+                        ($0.subjectUUID == nil && $0.subjectId == code && $0.studyUUID == studyUUID)
                     }
                 )
                 let calculations = try ctx.fetch(descriptor)
                 guard !calculations.isEmpty else { continue }
-                if calculations.contains(where: { $0.subject == nil }) && !hasCodeCollision(for: code) {
-                    calculations.forEach { calc in
-                        if calc.subject == nil {
-                            calc.subject = subject
-                            calc.study = study
-                            didMutate = true
-                        }
-                    }
-                }
                 let total = calculations.reduce(0) { $0 + $1.compliancePct }
                 accumulator[subject.id] = (total, calculations.count)
-            }
-            if didMutate {
-                try ctx.save()
             }
             subjectComplianceCache = accumulator.reduce(into: [:]) { result, pair in
                 let (identifier, value) = pair
@@ -1036,14 +1059,6 @@ struct CalculatorView: View {
             print("Failed to build compliance cache: \(error)")
             subjectComplianceCache = [:]
         }
-    }
-
-    private func hasCodeCollision(for code: String) -> Bool {
-        let descriptor = FetchDescriptor<Subject>(
-            predicate: #Predicate { $0.code == code }
-        )
-        guard let matches = try? ctx.fetch(descriptor) else { return false }
-        return matches.count > 1
     }
 
     private func selectDrug(_ d: Drug) {
@@ -1269,6 +1284,7 @@ private struct Chip: View {
     var body: some View {
         Button(action: action) {
             Text(title)
+                .font(.body)
                 .padding(.vertical, 6)
                 .padding(.horizontal, 12)
                 .background(Capsule().fill(selected ? Color.accentColor.opacity(0.2) : Color.secondary.opacity(0.15)))
@@ -1279,6 +1295,8 @@ private struct Chip: View {
         .overlay(
             Capsule().stroke(selected ? Color.accentColor : Color.clear, lineWidth: 1)
         )
+        .accessibilityLabel(title)
+        .accessibilityValue(selected ? "Selected" : "Not selected")
     }
 }
 
@@ -1294,6 +1312,7 @@ private struct SubjectChip: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Text(title)
+                    .font(.body)
                 if let badge {
                     Text(badge)
                         .font(.caption2)
@@ -1311,6 +1330,8 @@ private struct SubjectChip: View {
         .buttonStyle(.plain)
         .contentShape(Capsule())
         .overlay(Capsule().stroke(selected ? Color.accentColor : Color.clear, lineWidth: 1))
+        .accessibilityLabel(badge != nil ? "\(title), compliance \(badge!)" : title)
+        .accessibilityValue(selected ? "Selected" : "Not selected")
     }
 }
 
