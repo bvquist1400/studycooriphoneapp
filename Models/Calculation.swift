@@ -35,6 +35,12 @@ final class Calculation {
     @Relationship(deleteRule: .cascade)
     var bottles: [Bottle]
 
+    @Relationship(deleteRule: .nullify, inverse: \Subject.calculations)
+    var subject: Subject?
+
+    @Relationship(deleteRule: .nullify, inverse: \Study.calculations)
+    var study: Study?
+
     init(
         subjectId: String? = nil,
         startDate: Date = Date(),
@@ -56,7 +62,9 @@ final class Calculation {
         breakdown: ComplianceBreakdown? = nil,
         createdAt: Date = Date(),
         drugName: String? = nil,
-        bottles: [Bottle] = []
+        bottles: [Bottle] = [],
+        subject: Subject? = nil,
+        study: Study? = nil
     ) {
         self.subjectId = subjectId
         self.startDate = startDate
@@ -79,5 +87,7 @@ final class Calculation {
         self.createdAt = createdAt
         self.drugName = drugName
         self.bottles = bottles
+        self.subject = subject
+        self.study = study
     }
 }

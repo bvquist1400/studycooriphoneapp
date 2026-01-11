@@ -22,6 +22,9 @@ final class Study {
     @Relationship(deleteRule: .cascade)
     var drugs: [Drug]
 
+    @Relationship(deleteRule: .cascade, inverse: \Calculation.study)
+    var calculations: [Calculation]
+
     init(
         name: String,
         notes: String? = nil,
@@ -31,7 +34,8 @@ final class Study {
         multiDrug: Bool = false,
         createdAt: Date = .now,
         subjects: [Subject] = [],
-        drugs: [Drug] = []
+        drugs: [Drug] = [],
+        calculations: [Calculation] = []
     ) {
         self.name = name
         self.notes = notes
@@ -42,5 +46,6 @@ final class Study {
         self.createdAt = createdAt
         self.subjects = subjects
         self.drugs = drugs
+        self.calculations = calculations
     }
 }

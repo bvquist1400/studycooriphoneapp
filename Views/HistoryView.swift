@@ -96,9 +96,29 @@ struct HistoryView: View {
     }
 
     private func share(calculation: Calculation) {
-        let content = export(calculation)
-        guard let url = write(content: content, suggestedName: "Calculation", fileExtension: "txt") else { return }
-        presentShare(fileURL: url, plainText: content)
+        let summary = export(calculation)
+        let csv = exportCSV([calculation])
+        let suggestedName = fileNamePrefix(for: calculation)
+
+        guard let csvURL = write(content: csv, suggestedName: suggestedName, fileExtension: "csv") else { return }
+        var attachments: [URL] = [csvURL]
+
+        if let pdfData = PDFExporter.calculationSummaryPDF(calculation),
+           let pdfURL = write(data: pdfData, suggestedName: suggestedName, fileExtension: "pdf") {
+            attachments.append(pdfURL)
+        }
+
+        presentShare(fileURLs: attachments, plainText: summary)
+    }
+
+    private func fileNamePrefix(for calculation: Calculation) -> String {
+        guard let subject = calculation.subjectId?.trimmingCharacters(in: .whitespacesAndNewlines), !subject.isEmpty else {
+            return "Calculation"
+        }
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
+        let components = subject.components(separatedBy: allowed.inverted).filter { !$0.isEmpty }
+        let slug = components.joined(separator: "-")
+        return slug.isEmpty ? "Calculation" : "Calculation-\(slug)"
     }
 
     private func export(_ c: Calculation) -> String {
@@ -121,7 +141,7 @@ struct HistoryView: View {
         guard !selected.isEmpty else { return }
         let csv = exportCSV(selected)
         guard let url = write(content: csv, suggestedName: "Calculations", fileExtension: "csv") else { return }
-        presentShare(fileURL: url, plainText: csv)
+        presentShare(fileURLs: [url], plainText: csv)
     }
 
     private func exportCSV(_ list: [Calculation]) -> String {
@@ -162,18 +182,23 @@ struct HistoryView: View {
         return lines.joined(separator: "\n")
     }
 
-private func friendlyFlags(for calculation: Calculation) -> [String] {
-    calculation.flags.map { ComplianceOutputs.description(for: $0) }
-}
+    private func friendlyFlags(for calculation: Calculation) -> [String] {
+        calculation.flags.map { ComplianceOutputs.description(for: $0) }
+    }
 
     private func write(content: String, suggestedName: String, fileExtension: String) -> URL? {
+        guard let data = content.data(using: .utf8) else { return nil }
+        return write(data: data, suggestedName: suggestedName, fileExtension: fileExtension)
+    }
+
+    private func write(data: Data, suggestedName: String, fileExtension: String) -> URL? {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyyMMdd-HHmmss"
         let timestamp = formatter.string(from: Date())
         let fileName = "\(suggestedName)-\(timestamp).\(fileExtension)"
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
         do {
-            try content.write(to: url, atomically: true, encoding: .utf8)
+            try data.write(to: url, options: .atomic)
             return url
         } catch {
             print("Export write failed: \(error)")
@@ -181,9 +206,9 @@ private func friendlyFlags(for calculation: Calculation) -> [String] {
         }
     }
 
-    private func presentShare(fileURL: URL, plainText: String? = nil) {
-        cleanupURLs = [fileURL]
-        var items: [Any] = [fileURL]
+    private func presentShare(fileURLs: [URL], plainText: String? = nil) {
+        cleanupURLs = fileURLs
+        var items: [Any] = fileURLs
         if let plainText { items.append(plainText) }
         shareSheet = ShareSheet(activityItems: items) {
             cleanupURLs.forEach { try? FileManager.default.removeItem(at: $0) }

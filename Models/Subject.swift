@@ -12,12 +12,15 @@ final class Subject {
     @Relationship(inverse: \Study.subjects)
     var study: Study?
 
-    init(code: String, displayName: String? = nil, notes: String? = nil, createdAt: Date = .now, study: Study? = nil) {
+    @Relationship(deleteRule: .cascade, inverse: \Calculation.subject)
+    var calculations: [Calculation]
+
+    init(code: String, displayName: String? = nil, notes: String? = nil, createdAt: Date = .now, study: Study? = nil, calculations: [Calculation] = []) {
         self.code = code
         self.displayName = displayName
         self.notes = notes
         self.createdAt = createdAt
         self.study = study
+        self.calculations = calculations
     }
 }
-

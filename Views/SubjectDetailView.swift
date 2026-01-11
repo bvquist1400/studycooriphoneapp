@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Charts
 
 struct SubjectDetailView: View {
     @Environment(\.modelContext) private var ctx
@@ -9,16 +10,39 @@ struct SubjectDetailView: View {
 
     init(subject: Subject) {
         self.subject = subject
-        let codeOpt: String? = subject.code
-        _calcs = Query(
-            filter: #Predicate { $0.subjectId == codeOpt },
-            sort: [SortDescriptor(\Calculation.createdAt, order: .reverse)]
-        )
+        let code = subject.code
+        if let study = subject.study {
+            _calcs = Query(
+                filter: #Predicate {
+                    ($0.subject == subject) ||
+                    ($0.subject == nil && $0.subjectId == code && $0.study == study)
+                },
+                sort: [SortDescriptor(\Calculation.createdAt, order: .reverse)]
+            )
+        } else {
+            _calcs = Query(
+                filter: #Predicate {
+                    ($0.subject == subject) ||
+                    ($0.subject == nil && $0.subjectId == code && $0.study == nil)
+                },
+                sort: [SortDescriptor(\Calculation.createdAt, order: .reverse)]
+            )
+        }
     }
 
     var body: some View {
         List {
             Section { headerCard } header: { Label("Overview", systemImage: "person.crop.circle.badge.checkmark") }
+
+            if !calcs.isEmpty {
+                Section {
+                    complianceTrend
+                        .frame(minHeight: 180)
+                        .padding(.vertical, 4)
+                } header: {
+                    Label("Trends", systemImage: "chart.line.uptrend.xyaxis")
+                }
+            }
 
             Section {
                 if calcs.isEmpty {
@@ -78,6 +102,65 @@ struct SubjectDetailView: View {
     }
     private var bestCompliance: Double { calcs.map { $0.compliancePct }.max() ?? 0 }
     private var worstCompliance: Double { calcs.map { $0.compliancePct }.min() ?? 0 }
+
+    private var trendPoints: [(date: Date, compliance: Double)] {
+        calcs
+            .sorted(by: { $0.endDate < $1.endDate })
+            .map { ($0.endDate, $0.compliancePct) }
+    }
+
+    @ViewBuilder
+    private var complianceTrend: some View {
+        if trendPoints.count >= 2 {
+            Chart {
+                ForEach(trendPoints, id: \.date) { point in
+                    LineMark(
+                        x: .value("Visit Date", point.date),
+                        y: .value("Compliance (%)", point.compliance)
+                    )
+                    .interpolationMethod(.monotone)
+                    PointMark(
+                        x: .value("Visit Date", point.date),
+                        y: .value("Compliance (%)", point.compliance)
+                    )
+                    .symbolSize(36)
+                }
+                RuleMark(y: .value("Target", 100))
+                    .lineStyle(.init(lineWidth: 1, dash: [4]))
+                    .foregroundStyle(Color.secondary)
+                    .annotation(position: .topTrailing) {
+                        Text("100% target")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading)
+            }
+            .chartYAxisLabel("Compliance (%)")
+            .chartXAxis {
+                AxisMarks(values: .automatic(desiredCount: min(6, trendPoints.count))) { value in
+                    AxisValueLabel {
+                        if let dateValue = value.as(Date.self) {
+                            Text(dateValue, format: .dateTime.month(.abbreviated).day())
+                        }
+                    }
+                    AxisTick()
+                    AxisGridLine()
+                }
+            }
+        } else if let only = trendPoints.first {
+            VStack(spacing: 12) {
+                Text("Only one visit recorded so far.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Text("\(only.compliance, specifier: "%.1f")% compliance on \(only.date.formatted(date: .abbreviated, time: .omitted)).")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
 
     private func colorForCompliance(_ pct: Double) -> Color {
         if pct > 110 { return .orange }

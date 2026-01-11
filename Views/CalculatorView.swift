@@ -39,7 +39,7 @@ struct CalculatorView: View {
     // Per-IP bottle inputs and results (multi-IP studies)
     @State private var drugBottles: [String: [BottleInput]] = [:]
     @State private var drugOverrides: [PersistentIdentifier: DrugOverrideState] = [:]
-    @State private var subjectComplianceCache: [String: Double] = [:]
+    @State private var subjectComplianceCache: [PersistentIdentifier: Double] = [:]
     @State private var isApplyingOverride = false
     @State private var multiResults: [String: ComplianceOutputs] = [:]
     @State private var showNewSubjectSheet = false
@@ -262,6 +262,8 @@ struct CalculatorView: View {
                     record.breakdown = out.breakdown
                     record.createdAt = .now
                     record.bottles = models
+                    record.subject = selectedSubject
+                    record.study = selectedStudy
                     ctx.insert(record)
                 } catch {
                     encounteredError = error
@@ -342,6 +344,8 @@ struct CalculatorView: View {
                 record.breakdown = out.breakdown
                 record.createdAt = .now
                 record.bottles = bottleModels
+                record.subject = selectedSubject
+                record.study = selectedStudy
                 ctx.insert(record)
                 try ctx.save()
                 latestCalculation = record
@@ -989,35 +993,57 @@ struct CalculatorView: View {
     }
 
     private func refreshComplianceCache(for study: Study) {
-        let subjectCodes = study.subjects.map(\.code)
-        guard !subjectCodes.isEmpty else {
+        let subjects = study.subjects
+        guard !subjects.isEmpty else {
             subjectComplianceCache = [:]
             return
         }
 
         do {
-            var accumulator: [String: (total: Double, count: Int)] = [:]
-            for code in subjectCodes {
+            var accumulator: [PersistentIdentifier: (total: Double, count: Int)] = [:]
+            var didMutate = false
+            for subject in subjects {
+                let code = subject.code
                 let descriptor = FetchDescriptor<Calculation>(
-                    predicate: #Predicate { $0.subjectId == code }
+                    predicate: #Predicate {
+                        ($0.subject == subject) ||
+                        ($0.subject == nil && $0.subjectId == code && $0.study == study)
+                    }
                 )
                 let calculations = try ctx.fetch(descriptor)
                 guard !calculations.isEmpty else { continue }
-                var total: Double = 0
-                for calculation in calculations {
-                    total += calculation.compliancePct
+                if calculations.contains(where: { $0.subject == nil }) && !hasCodeCollision(for: code) {
+                    calculations.forEach { calc in
+                        if calc.subject == nil {
+                            calc.subject = subject
+                            calc.study = study
+                            didMutate = true
+                        }
+                    }
                 }
-                accumulator[code] = (total, calculations.count)
+                let total = calculations.reduce(0) { $0 + $1.compliancePct }
+                accumulator[subject.id] = (total, calculations.count)
+            }
+            if didMutate {
+                try ctx.save()
             }
             subjectComplianceCache = accumulator.reduce(into: [:]) { result, pair in
-                let (code, value) = pair
+                let (identifier, value) = pair
                 guard value.count > 0 else { return }
-                result[code] = value.total / Double(value.count)
+                result[identifier] = value.total / Double(value.count)
             }
         } catch {
             print("Failed to build compliance cache: \(error)")
             subjectComplianceCache = [:]
         }
+    }
+
+    private func hasCodeCollision(for code: String) -> Bool {
+        let descriptor = FetchDescriptor<Subject>(
+            predicate: #Predicate { $0.code == code }
+        )
+        guard let matches = try? ctx.fetch(descriptor) else { return false }
+        return matches.count > 1
     }
 
     private func selectDrug(_ d: Drug) {
@@ -1027,7 +1053,7 @@ struct CalculatorView: View {
     }
 
     private func lastComplianceValue(for subject: Subject) -> Double? {
-        subjectComplianceCache[subject.code]
+        subjectComplianceCache[subject.id]
     }
 
     private func lastComplianceText(for subject: Subject) -> String? {
