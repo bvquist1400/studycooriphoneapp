@@ -35,6 +35,9 @@ struct SettingsView: View {
                 Link(destination: URL(string: "https://ios.studycoor.com/privacy")!) {
                     Label("Privacy Policy", systemImage: "lock.shield")
                 }
+                Link(destination: URL(string: "https://ios.studycoor.com/terms")!) {
+                    Label("Terms of Service", systemImage: "doc.text")
+                }
             } header: {
                 Label("About & Support", systemImage: "info.circle")
             }
