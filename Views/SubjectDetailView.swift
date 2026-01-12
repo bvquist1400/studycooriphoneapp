@@ -11,28 +11,25 @@ struct SubjectDetailView: View {
     init(subject: Subject) {
         self.subject = subject
         let code = subject.code
-        if let study = subject.study {
-            _calcs = Query(
-                filter: #Predicate {
-                    ($0.subject == subject) ||
-                    ($0.subject == nil && $0.subjectId == code && $0.study == study)
-                },
-                sort: [SortDescriptor(\Calculation.createdAt, order: .reverse)]
-            )
-        } else {
-            _calcs = Query(
-                filter: #Predicate {
-                    ($0.subject == subject) ||
-                    ($0.subject == nil && $0.subjectId == code && $0.study == nil)
-                },
-                sort: [SortDescriptor(\Calculation.createdAt, order: .reverse)]
-            )
+        let subjectUUID = subject.uuid
+        let sort = [SortDescriptor(\Calculation.createdAt, order: .reverse)]
+        let requestedStudyUUID = subject.study?.uuid
+        let predicate = #Predicate<Calculation> { calc in
+            calc.subjectUUID == subjectUUID ||
+            (calc.subjectUUID == nil && calc.subjectId == code && calc.studyUUID == requestedStudyUUID)
         }
+        _calcs = Query(filter: predicate, sort: sort)
     }
 
     var body: some View {
         List {
-            Section { headerCard } header: { Label("Overview", systemImage: "person.crop.circle.badge.checkmark") }
+            Section { headerCard } header: {
+                Label {
+                    Text("subjectDetail.overview", tableName: "Localizable", comment: "Subject detail overview section header")
+                } icon: {
+                    Image(systemName: "person.crop.circle.badge.checkmark")
+                }
+            }
 
             if !calcs.isEmpty {
                 Section {
@@ -40,13 +37,17 @@ struct SubjectDetailView: View {
                         .frame(minHeight: 180)
                         .padding(.vertical, 4)
                 } header: {
-                    Label("Trends", systemImage: "chart.line.uptrend.xyaxis")
+                    Label {
+                        Text("subjectDetail.trends", tableName: "Localizable", comment: "Subject detail trends section header")
+                    } icon: {
+                        Image(systemName: "chart.line.uptrend.xyaxis")
+                    }
                 }
             }
 
             Section {
                 if calcs.isEmpty {
-                    Text("No visits yet. Run a calculation with this subject code to see it here.")
+                    Text("subjectDetail.noVisits", tableName: "Localizable", comment: "Empty state message for subject detail visits list")
                         .foregroundStyle(.secondary)
                 }
                 ForEach(calcs) { c in
@@ -64,7 +65,13 @@ struct SubjectDetailView: View {
                         }
                     }
                 }
-            } header: { Label("Visits", systemImage: "calendar") }
+            } header: {
+                Label {
+                    Text("subjectDetail.visits", tableName: "Localizable", comment: "Subject detail visits section header")
+                } icon: {
+                    Image(systemName: "calendar")
+                }
+            }
         }
         .navigationTitle(subject.displayName ?? subject.code)
         .listStyle(.insetGrouped)
@@ -74,14 +81,14 @@ struct SubjectDetailView: View {
     private var headerCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                stat(title: "Total Pills", value: String(format: "%.0f", totalPills))
+                stat(title: NSLocalizedString("subjectDetail.header.totalPills", tableName: "Localizable", value: "Total Pills", comment: "Subject detail total pills stat title"), value: String(format: "%.0f", totalPills))
                 Spacer()
-                stat(title: "Visits", value: String(calcs.count))
+                stat(title: NSLocalizedString("subjectDetail.header.visits", tableName: "Localizable", value: "Visits", comment: "Subject detail visits stat title"), value: String(calcs.count))
             }
             HStack {
-                stat(title: "Avg %", value: String(format: "%.1f", averageCompliance))
+                stat(title: NSLocalizedString("subjectDetail.header.average", tableName: "Localizable", value: "Avg %", comment: "Subject detail average compliance stat title"), value: String(format: "%.1f", averageCompliance))
                 Spacer()
-                stat(title: "Best/Worst", value: String(format: "%.0f/%.0f", bestCompliance, worstCompliance))
+                stat(title: NSLocalizedString("subjectDetail.header.bestWorst", tableName: "Localizable", value: "Best/Worst", comment: "Subject detail best and worst compliance stat title"), value: String(format: "%.0f/%.0f", bestCompliance, worstCompliance))
             }
         }
         .padding(12)
@@ -112,24 +119,28 @@ struct SubjectDetailView: View {
     @ViewBuilder
     private var complianceTrend: some View {
         if trendPoints.count >= 2 {
+            let visitDateAxisTitle = NSLocalizedString("subjectDetail.trend.axis.visitDate", tableName: "Localizable", value: "Visit Date", comment: "Axis title for visit dates in the subject detail compliance trend chart")
+            let complianceAxisTitle = NSLocalizedString("subjectDetail.trend.axis.compliance", tableName: "Localizable", value: "Compliance (%)", comment: "Axis title for compliance percentage in the subject detail compliance trend chart")
+            let targetAxisTitle = NSLocalizedString("subjectDetail.trend.axis.target", tableName: "Localizable", value: "Target", comment: "Target label used for the compliance trend chart baseline")
+
             Chart {
                 ForEach(trendPoints, id: \.date) { point in
                     LineMark(
-                        x: .value("Visit Date", point.date),
-                        y: .value("Compliance (%)", point.compliance)
+                        x: .value(visitDateAxisTitle, point.date),
+                        y: .value(complianceAxisTitle, point.compliance)
                     )
                     .interpolationMethod(.monotone)
                     PointMark(
-                        x: .value("Visit Date", point.date),
-                        y: .value("Compliance (%)", point.compliance)
+                        x: .value(visitDateAxisTitle, point.date),
+                        y: .value(complianceAxisTitle, point.compliance)
                     )
                     .symbolSize(36)
                 }
-                RuleMark(y: .value("Target", 100))
+                RuleMark(y: .value(targetAxisTitle, 100))
                     .lineStyle(.init(lineWidth: 1, dash: [4]))
                     .foregroundStyle(Color.secondary)
                     .annotation(position: .topTrailing) {
-                        Text("100% target")
+                        Text("subjectDetail.trend.target", tableName: "Localizable", comment: "Annotation label showing 100 percent compliance target line")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
@@ -137,7 +148,9 @@ struct SubjectDetailView: View {
             .chartYAxis {
                 AxisMarks(position: .leading)
             }
-            .chartYAxisLabel("Compliance (%)")
+            .chartYAxisLabel {
+                Text(complianceAxisTitle)
+            }
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: min(6, trendPoints.count))) { value in
                     AxisValueLabel {
@@ -149,12 +162,16 @@ struct SubjectDetailView: View {
                     AxisGridLine()
                 }
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text("subjectDetail.trend.accessibilityLabel", tableName: "Localizable", comment: "Accessibility label describing the compliance trend chart"))
+            .accessibilityValue(trendAccessibilitySummary)
+            .accessibilityHint(Text("subjectDetail.trend.accessibilityHint", tableName: "Localizable", comment: "Accessibility hint for the compliance trend chart"))
         } else if let only = trendPoints.first {
             VStack(spacing: 12) {
-                Text("Only one visit recorded so far.")
+                Text("subjectDetail.trend.singleVisitTitle", tableName: "Localizable", comment: "Message shown when only one visit exists")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
-                Text("\(only.compliance, specifier: "%.1f")% compliance on \(only.date.formatted(date: .abbreviated, time: .omitted)).")
+                Text(String(format: NSLocalizedString("subjectDetail.trend.singleVisitDescription", tableName: "Localizable", value: "%@ compliance on %@.", comment: "Describes the only visit compliance result in subject detail trend"), String(format: "%.1f%%", only.compliance), only.date.formatted(date: .abbreviated, time: .omitted)))
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
@@ -166,6 +183,21 @@ struct SubjectDetailView: View {
         if pct > 110 { return .orange }
         if pct < 90 { return .red }
         return .green
+    }
+
+    private var trendAccessibilitySummary: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .none
+        let pointsToDescribe = trendPoints.suffix(3)
+        let descriptions = pointsToDescribe.map { point in
+            let date = formatter.string(from: point.date)
+            return String(format: NSLocalizedString("subjectDetail.trend.accessibilitySummaryItem", tableName: "Localizable", value: "%@ at %.1f percent", comment: "Accessibility summary item describing compliance percentage on a specific date"), date, point.compliance)
+        }
+        if descriptions.isEmpty {
+            return NSLocalizedString("subjectDetail.trend.accessibilitySummaryEmpty", tableName: "Localizable", value: "No visits recorded yet.", comment: "Accessibility summary when no visits exist")
+        }
+        return descriptions.joined(separator: ", ")
     }
 
 }

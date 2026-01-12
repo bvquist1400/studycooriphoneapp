@@ -388,6 +388,9 @@ struct ExplainabilityView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.leading, numberColumnWidth + gutter)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(number). \(title)")
+            .accessibilityValue(detail)
         }
     }
 
@@ -407,6 +410,9 @@ struct ExplainabilityView: View {
                     .monospacedDigit()
                     .foregroundStyle(highlight ? Color.accentColor : Color.primary)
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(label)
+            .accessibilityValue(value)
         }
     }
 

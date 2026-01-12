@@ -31,27 +31,53 @@ struct HistoryView: View {
                         row(for: calc)
                     }
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button(role: .destructive) { delete(calculation: calc) } label: { Label("Delete", systemImage: "trash") }
-                        Button { share(calculation: calc) } label: { Label("Share", systemImage: "square.and.arrow.up") }
+                        Button(role: .destructive) { delete(calculation: calc) } label: {
+                            Label {
+                                Text("history.action.delete", tableName: "Localizable", comment: "Delete calculation from history action")
+                            } icon: {
+                                Image(systemName: "trash")
+                            }
+                        }
+                        Button { share(calculation: calc) } label: {
+                            Label {
+                                Text("history.action.share", tableName: "Localizable", comment: "Share calculation from history action")
+                            } icon: {
+                                Image(systemName: "square.and.arrow.up")
+                            }
+                        }
                     }
                     .contextMenu {
-                        Button("Share", action: { share(calculation: calc) })
+                        Button(action: { share(calculation: calc) }) {
+                            Text("history.action.share", tableName: "Localizable", comment: "Share calculation from context menu")
+                        }
                         Button(role: .destructive, action: { delete(calculation: calc) }) {
-                            Text("Delete")
+                            Text("history.action.delete", tableName: "Localizable", comment: "Delete calculation from context menu")
                         }
                     }
                 }
                 .onDelete(perform: delete)
             }
-            .navigationTitle("History")
+            .navigationTitle(Text("history.navigation.title", tableName: "Localizable", comment: "History navigation title"))
             .navigationBarTitleDisplayMode(.large)
             .listStyle(.insetGrouped)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) { EditButton() }
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     if !selection.isEmpty {
-                        Button { shareSelected() } label: { Label("Share", systemImage: "square.and.arrow.up") }
-                        Button(role: .destructive) { deleteSelection() } label: { Label("Delete", systemImage: "trash") }
+                        Button { shareSelected() } label: {
+                            Label {
+                                Text("history.action.share", tableName: "Localizable", comment: "Share selected calculations action")
+                            } icon: {
+                                Image(systemName: "square.and.arrow.up")
+                            }
+                        }
+                        Button(role: .destructive) { deleteSelection() } label: {
+                            Label {
+                                Text("history.action.delete", tableName: "Localizable", comment: "Delete selected calculations action")
+                            } icon: {
+                                Image(systemName: "trash")
+                            }
+                        }
                     }
                 }
             }
@@ -61,9 +87,9 @@ struct HistoryView: View {
             }
             .alert(item: $persistenceError) { error in
                 Alert(
-                    title: Text("Unable to save changes"),
+                    title: Text("history.alert.saveFailure.title", tableName: "Localizable", comment: "Title for failure to save history changes alert"),
                     message: Text(error.message),
-                    dismissButton: .default(Text("OK"))
+                    dismissButton: .default(Text("history.alert.saveFailure.dismiss", tableName: "Localizable", comment: "Dismiss button title for history save failure alert"))
                 )
             }
         }
@@ -112,42 +138,77 @@ struct HistoryView: View {
     }
 
     private func fileNamePrefix(for calculation: Calculation) -> String {
+        let defaultName = NSLocalizedString("history.filePrefix.default", tableName: "Localizable", value: "Calculation", comment: "Default file name prefix for a calculation export")
         guard let subject = calculation.subjectId?.trimmingCharacters(in: .whitespacesAndNewlines), !subject.isEmpty else {
-            return "Calculation"
+            return defaultName
         }
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_"))
         let components = subject.components(separatedBy: allowed.inverted).filter { !$0.isEmpty }
         let slug = components.joined(separator: "-")
-        return slug.isEmpty ? "Calculation" : "Calculation-\(slug)"
+        guard !slug.isEmpty else { return defaultName }
+        return String(format: NSLocalizedString("history.filePrefix.withSlug", tableName: "Localizable", value: "Calculation-%@", comment: "File name prefix for calculation export including subject slug"), slug)
     }
 
     private func export(_ c: Calculation) -> String {
-        """
-        Subject: \(c.subjectId ?? "N/A")
-        Period: \(c.startDate.formatted(date: .abbreviated, time: .omitted)) – \(c.endDate.formatted(date: .abbreviated, time: .omitted))
-        Frequency: \(c.frequency.rawValue)
-        Edge days: first \(c.firstDayExpectedOverride.map(String.init) ?? "-")  last \(c.lastDayExpectedOverride.map(String.init) ?? "-")
-        Dispensed: \(c.dispensed)  Returned: \(c.returned)
-        Missed: \(c.missedDoses)  Extra: \(c.extraDoses)  Hold days: \(c.holdDays)
-        Expected: \(String(format: "%.2f", c.expectedDoses))  Actual: \(String(format: "%.2f", c.actualDoses))
-        Compliance: \(String(format: "%.1f%%", c.compliancePct))
-        Flags: \(friendlyFlags(for: c).joined(separator: ", "))
-        Created: \(c.createdAt.formatted())
-        """
+        let subjectPlaceholder = NSLocalizedString("history.export.summary.subjectFallback", tableName: "Localizable", value: "N/A", comment: "Fallback subject identifier in history export summary")
+        let subject = (c.subjectId?.trimmingCharacters(in: .whitespacesAndNewlines)).flatMap { $0.isEmpty ? nil : $0 } ?? subjectPlaceholder
+        let start = c.startDate.formatted(date: .abbreviated, time: .omitted)
+        let end = c.endDate.formatted(date: .abbreviated, time: .omitted)
+        let firstEdge = c.firstDayExpectedOverride.map(String.init) ?? NSLocalizedString("history.export.summary.edgeDaysPlaceholder", tableName: "Localizable", value: "-", comment: "Placeholder for missing first edge day in history export")
+        let lastEdge = c.lastDayExpectedOverride.map(String.init) ?? NSLocalizedString("history.export.summary.edgeDaysPlaceholder", tableName: "Localizable", value: "-", comment: "Placeholder for missing last edge day in history export")
+        let dispensed = String(format: "%.2f", c.dispensed)
+        let returned = String(format: "%.2f", c.returned)
+        let missed = String(format: "%.2f", c.missedDoses)
+        let extra = String(format: "%.2f", c.extraDoses)
+        let expected = String(format: "%.2f", c.expectedDoses)
+        let actual = String(format: "%.2f", c.actualDoses)
+        let compliance = String(format: "%.1f%%", c.compliancePct)
+        let flags = friendlyFlags(for: c).joined(separator: ", ")
+        let created = c.createdAt.formatted()
+        let lines = [
+            String(format: NSLocalizedString("history.export.summary.subject", tableName: "Localizable", value: "Subject: %@", comment: "Subject identifier line in history export summary"), subject),
+            String(format: NSLocalizedString("history.export.summary.period", tableName: "Localizable", value: "Period: %@ – %@", comment: "Period line in history export summary"), start, end),
+            String(format: NSLocalizedString("history.export.summary.frequency", tableName: "Localizable", value: "Frequency: %@", comment: "Frequency line in history export summary"), c.frequency.rawValue),
+            String(format: NSLocalizedString("history.export.summary.edgeDays", tableName: "Localizable", value: "Edge days: first %@  last %@", comment: "Edge days line in history export summary"), firstEdge, lastEdge),
+            String(format: NSLocalizedString("history.export.summary.dispensedReturned", tableName: "Localizable", value: "Dispensed: %@  Returned: %@", comment: "Dispensed/returned line in history export summary"), dispensed, returned),
+            String(format: NSLocalizedString("history.export.summary.missedExtraHold", tableName: "Localizable", value: "Missed: %@  Extra: %@  Hold days: %@", comment: "Missed/extra/hold line in history export summary"), missed, extra, String(c.holdDays)),
+            String(format: NSLocalizedString("history.export.summary.expectedActual", tableName: "Localizable", value: "Expected: %@  Actual: %@", comment: "Expected/actual line in history export summary"), expected, actual),
+            String(format: NSLocalizedString("history.export.summary.compliance", tableName: "Localizable", value: "Compliance: %@", comment: "Compliance line in history export summary"), compliance),
+            String(format: NSLocalizedString("history.export.summary.flags", tableName: "Localizable", value: "Flags: %@", comment: "Flags line in history export summary"), flags),
+            String(format: NSLocalizedString("history.export.summary.created", tableName: "Localizable", value: "Created: %@", comment: "Created date line in history export summary"), created)
+        ]
+        return lines.joined(separator: "\n")
     }
 
     private func shareSelected() {
         let selected = Array(selection)
         guard !selected.isEmpty else { return }
         let csv = exportCSV(selected)
-        guard let url = write(content: csv, suggestedName: "Calculations", fileExtension: "csv") else { return }
+        let multiName = NSLocalizedString("history.filePrefix.multiple", tableName: "Localizable", value: "Calculations", comment: "File name prefix when exporting multiple calculations")
+        guard let url = write(content: csv, suggestedName: multiName, fileExtension: "csv") else { return }
         presentShare(fileURLs: [url], plainText: csv)
     }
 
     private func exportCSV(_ list: [Calculation]) -> String {
         var lines: [String] = []
         let header = [
-            "Subject","Start","End","Frequency","FirstDay","LastDay","Dispensed","Returned","Missed","Extra","HoldDays","Expected","Actual","Compliance","Flags","Created","Drug"
+            NSLocalizedString("history.csv.header.subject", tableName: "Localizable", value: "Subject", comment: "CSV header subject column"),
+            NSLocalizedString("history.csv.header.start", tableName: "Localizable", value: "Start", comment: "CSV header start column"),
+            NSLocalizedString("history.csv.header.end", tableName: "Localizable", value: "End", comment: "CSV header end column"),
+            NSLocalizedString("history.csv.header.frequency", tableName: "Localizable", value: "Frequency", comment: "CSV header frequency column"),
+            NSLocalizedString("history.csv.header.firstDay", tableName: "Localizable", value: "FirstDay", comment: "CSV header first day column"),
+            NSLocalizedString("history.csv.header.lastDay", tableName: "Localizable", value: "LastDay", comment: "CSV header last day column"),
+            NSLocalizedString("history.csv.header.dispensed", tableName: "Localizable", value: "Dispensed", comment: "CSV header dispensed column"),
+            NSLocalizedString("history.csv.header.returned", tableName: "Localizable", value: "Returned", comment: "CSV header returned column"),
+            NSLocalizedString("history.csv.header.missed", tableName: "Localizable", value: "Missed", comment: "CSV header missed column"),
+            NSLocalizedString("history.csv.header.extra", tableName: "Localizable", value: "Extra", comment: "CSV header extra column"),
+            NSLocalizedString("history.csv.header.holdDays", tableName: "Localizable", value: "HoldDays", comment: "CSV header hold days column"),
+            NSLocalizedString("history.csv.header.expected", tableName: "Localizable", value: "Expected", comment: "CSV header expected column"),
+            NSLocalizedString("history.csv.header.actual", tableName: "Localizable", value: "Actual", comment: "CSV header actual column"),
+            NSLocalizedString("history.csv.header.compliance", tableName: "Localizable", value: "Compliance", comment: "CSV header compliance column"),
+            NSLocalizedString("history.csv.header.flags", tableName: "Localizable", value: "Flags", comment: "CSV header flags column"),
+            NSLocalizedString("history.csv.header.created", tableName: "Localizable", value: "Created", comment: "CSV header created column"),
+            NSLocalizedString("history.csv.header.drug", tableName: "Localizable", value: "Drug", comment: "CSV header drug column")
         ].joined(separator: ",")
         lines.append(header)
         let df = DateFormatter()
@@ -224,9 +285,11 @@ struct HistoryView: View {
 
     @ViewBuilder
     private func row(for calc: Calculation) -> some View {
+        let subjectId = calc.subjectId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let subjectDisplay = subjectId.isEmpty ? NSLocalizedString("history.row.noSubject", tableName: "Localizable", value: "No Subject", comment: "Placeholder subject name in history row") : subjectId
         VStack(alignment: .leading) {
             HStack {
-                Text(calc.subjectId ?? "No Subject")
+                Text(subjectDisplay)
                     .font(.headline)
                 Spacer()
                 Text(calc.frequency.rawValue)
@@ -234,14 +297,14 @@ struct HistoryView: View {
                     .foregroundStyle(.secondary)
             }
             if let dn = calc.drugName, !dn.isEmpty {
-                Text("Investigational Product: \(dn)")
+                Text(String(format: NSLocalizedString("history.row.investigationalProduct", tableName: "Localizable", value: "Investigational Product: %@", comment: "Investigational product label in history row"), dn))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
             Text("\(calc.startDate.formatted(date: .abbreviated, time: .omitted)) → \(calc.endDate.formatted(date: .abbreviated, time: .omitted))")
                 .font(.caption)
             if !calc.bottles.isEmpty {
-                Text("Bottles: \(calc.bottles.count)")
+                Text(String(format: NSLocalizedString("history.row.bottlesCount", tableName: "Localizable", value: "Bottles: %@", comment: "Bottles count label in history row"), String(calc.bottles.count)))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
@@ -254,6 +317,32 @@ struct HistoryView: View {
                 )
                 .foregroundStyle(colorForCompliance(calc.compliancePct))
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(accessibilityLabel(for: calc))
+        .accessibilityHint(Text("history.accessibility.rowHint", tableName: "Localizable", comment: "Accessibility hint for history row"))
+    }
+
+    private func accessibilityLabel(for calc: Calculation) -> String {
+        var parts: [String] = []
+        if let subject = calc.subjectId?.trimmingCharacters(in: .whitespacesAndNewlines), !subject.isEmpty {
+            parts.append(String(format: NSLocalizedString("history.accessibility.rowLabel.subject", tableName: "Localizable", value: "Subject %@", comment: "Accessibility subject component for history row"), subject))
+        } else {
+            parts.append(NSLocalizedString("history.accessibility.rowLabel.unassigned", tableName: "Localizable", value: "Unassigned subject", comment: "Accessibility subject component when missing in history row"))
+        }
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .medium
+        dateFormatter.timeStyle = .none
+        let start = dateFormatter.string(from: calc.startDate)
+        let end = dateFormatter.string(from: calc.endDate)
+        let periodRange = String(format: NSLocalizedString("history.accessibility.rowLabel.periodRange", tableName: "Localizable", value: "%@ to %@", comment: "Date range for history accessibility label"), start, end)
+        parts.append(String(format: NSLocalizedString("history.accessibility.rowLabel.period", tableName: "Localizable", value: "Period %@", comment: "Accessibility period component for history row"), periodRange))
+        let compliance = String(format: "%.1f", calc.compliancePct)
+        parts.append(String(format: NSLocalizedString("history.accessibility.rowLabel.compliance", tableName: "Localizable", value: "Compliance %@ percent", comment: "Accessibility compliance component for history row"), compliance))
+        if !calc.flags.isEmpty {
+            let flagDescriptions = friendlyFlags(for: calc)
+            parts.append(String(format: NSLocalizedString("history.accessibility.rowLabel.flags", tableName: "Localizable", value: "Flags %@", comment: "Accessibility flags component for history row"), flagDescriptions.joined(separator: ", ")))
+        }
+        return parts.joined(separator: ", ")
     }
 }
 

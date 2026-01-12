@@ -5,6 +5,7 @@ import SwiftData
 final class Study {
     var name: String
     var notes: String?
+    var uuid: UUID
 
     // Defaults for new calculations within this study
     var defaultFrequency: DosingFrequency
@@ -22,9 +23,6 @@ final class Study {
     @Relationship(deleteRule: .cascade)
     var drugs: [Drug]
 
-    @Relationship(deleteRule: .cascade, inverse: \Calculation.study)
-    var calculations: [Calculation]
-
     init(
         name: String,
         notes: String? = nil,
@@ -33,9 +31,9 @@ final class Study {
         defaultPrnTargetPerDay: Double? = nil,
         multiDrug: Bool = false,
         createdAt: Date = .now,
+        uuid: UUID = UUID(),
         subjects: [Subject] = [],
-        drugs: [Drug] = [],
-        calculations: [Calculation] = []
+        drugs: [Drug] = []
     ) {
         self.name = name
         self.notes = notes
@@ -44,8 +42,8 @@ final class Study {
         self.defaultPrnTargetPerDay = defaultPrnTargetPerDay
         self.multiDrug = multiDrug
         self.createdAt = createdAt
+        self.uuid = uuid
         self.subjects = subjects
         self.drugs = drugs
-        self.calculations = calculations
     }
 }

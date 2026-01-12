@@ -8,19 +8,17 @@ final class Subject {
     var displayName: String?
     var notes: String?
     var createdAt: Date
+    var uuid: UUID
 
     @Relationship(inverse: \Study.subjects)
     var study: Study?
 
-    @Relationship(deleteRule: .cascade, inverse: \Calculation.subject)
-    var calculations: [Calculation]
-
-    init(code: String, displayName: String? = nil, notes: String? = nil, createdAt: Date = .now, study: Study? = nil, calculations: [Calculation] = []) {
+    init(code: String, displayName: String? = nil, notes: String? = nil, createdAt: Date = .now, uuid: UUID = UUID(), study: Study? = nil) {
         self.code = code
         self.displayName = displayName
         self.notes = notes
         self.createdAt = createdAt
+        self.uuid = uuid
         self.study = study
-        self.calculations = calculations
     }
 }
