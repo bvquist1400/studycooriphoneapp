@@ -21,6 +21,7 @@ struct ExplainabilityView: View {
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("How We Calculated")
+        .accessibilityLabel("Compliance calculation breakdown")
     }
 
     private var breakdown: ComplianceBreakdown? {
@@ -178,7 +179,8 @@ struct ExplainabilityView: View {
     private func expectedCard(breakdown: ComplianceBreakdown) -> some View {
         explainabilityCard(
             title: "Expected Doses",
-            systemImage: "calendar.badge.clock"
+            systemImage: "calendar.badge.clock",
+            accessibilityLabel: "Expected doses breakdown showing \(Int(breakdown.expected.totalExpected)) total expected doses"
         ) {
             StatRow(label: "Days (inclusive)", value: "\(breakdown.expected.inclusiveDays)")
             StatRow(label: "Hold days", value: "\(breakdown.expected.holdDays)")
@@ -212,7 +214,8 @@ struct ExplainabilityView: View {
         let steps = computationSteps(for: breakdown)
         explainabilityCard(
             title: "Step-by-Step",
-            systemImage: "list.number"
+            systemImage: "list.number",
+            accessibilityLabel: "Step by step calculation breakdown with \(steps.count) steps"
         ) {
             ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
                 StepRow(number: index + 1, title: step.title, detail: step.detail)
@@ -229,7 +232,8 @@ struct ExplainabilityView: View {
     private func actualCard(breakdown: ComplianceBreakdown) -> some View {
         explainabilityCard(
             title: "Actual Doses",
-            systemImage: "pill.fill"
+            systemImage: "pill.fill",
+            accessibilityLabel: "Actual doses breakdown showing \(Int(breakdown.actual.afterClamping)) final actual doses"
         ) {
             ContributionRow(label: "Dispensed", value: format(breakdown.actual.dispensed), symbol: "+")
             ContributionRow(label: "Returned", value: format(breakdown.actual.returned), symbol: "−")
@@ -259,7 +263,8 @@ struct ExplainabilityView: View {
     private var legacyInputsCard: some View {
         explainabilityCard(
             title: "Inputs Snapshot",
-            systemImage: "doc.text.magnifyingglass"
+            systemImage: "doc.text.magnifyingglass",
+            accessibilityLabel: "Inputs snapshot showing calculation parameters"
         ) {
             StatRow(label: "Days (inclusive)", value: "\(days)")
             StatRow(label: "Hold days", value: "\(calculation.holdDays)")
@@ -298,7 +303,8 @@ struct ExplainabilityView: View {
     private var complianceCard: some View {
         explainabilityCard(
             title: "Compliance Summary",
-            systemImage: "percent"
+            systemImage: "percent",
+            accessibilityLabel: "Compliance summary showing \(String(format: "%.1f", calculation.compliancePct)) percent compliance"
         ) {
             StatRow(label: "Actual doses", value: format(calculation.actualDoses))
             StatRow(label: "Expected doses", value: format(calculation.expectedDoses))
@@ -319,8 +325,11 @@ struct ExplainabilityView: View {
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
                             .background(.thinMaterial, in: Capsule())
+                            .accessibilityLabel("Flag: \(flag)")
                     }
                 }
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Compliance flags")
             }
         } footer: {
             Text("Compliance = Actual ÷ Expected × 100. Values are clamped between 0% and 150%. If expected is 0, compliance is 0% unless both expected and actual are zero.")
@@ -331,6 +340,7 @@ struct ExplainabilityView: View {
     private func explainabilityCard<Content: View, Footer: View>(
         title: String,
         systemImage: String,
+        accessibilityLabel: String? = nil,
         @ViewBuilder content: () -> Content,
         footer: () -> Footer
     ) -> some View {
@@ -342,6 +352,8 @@ struct ExplainabilityView: View {
                 Text(title)
                     .font(.headline)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
 
             VStack(spacing: 12) {
                 content()
@@ -358,6 +370,8 @@ struct ExplainabilityView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
         )
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(accessibilityLabel ?? title)
     }
 
     private struct StepRow: View {

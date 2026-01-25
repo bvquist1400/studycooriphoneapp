@@ -230,7 +230,7 @@ You represent that:
 ## 18. Governing Law and Dispute Resolution
 
 ### 18.1 Governing Law
-These Terms are governed by the laws of [Your State/Country], without regard to conflict of law principles.
+These Terms are governed by the laws of the State of California, United States, without regard to conflict of law principles.
 
 ### 18.2 Disputes
 Any dispute arising from these Terms or the App shall be resolved through:
@@ -265,8 +265,8 @@ We are not liable for delays or failures due to circumstances beyond our reasona
 
 For questions about these Terms, please contact:
 
-**Email:** [Your contact email]
-**Website:** [Your website, if applicable]
+**Email:** support@studycoor.com
+**Website:** https://bvquist1400.github.io/studycooriphoneapp/
 
 For technical support or App Store issues, please contact us through the App or via Apple Support.
 

@@ -29,14 +29,20 @@ struct SettingsView: View {
                 } label: {
                     Label("Email Support", systemImage: "envelope")
                 }
-                Link(destination: URL(string: "https://bvquist1400.github.io/studycooriphoneapp/")!) {
-                    Label("Support Site", systemImage: "safari")
+                if let supportURL = URL(string: "https://bvquist1400.github.io/studycooriphoneapp/") {
+                    Link(destination: supportURL) {
+                        Label("Support Site", systemImage: "safari")
+                    }
                 }
-                Link(destination: URL(string: "https://bvquist1400.github.io/studycooriphoneapp/privacy.html")!) {
-                    Label("Privacy Policy", systemImage: "lock.shield")
+                if let privacyURL = URL(string: "https://bvquist1400.github.io/studycooriphoneapp/privacy.html") {
+                    Link(destination: privacyURL) {
+                        Label("Privacy Policy", systemImage: "lock.shield")
+                    }
                 }
-                Link(destination: URL(string: "https://bvquist1400.github.io/studycooriphoneapp/terms.html")!) {
-                    Label("Terms of Service", systemImage: "doc.text")
+                if let termsURL = URL(string: "https://bvquist1400.github.io/studycooriphoneapp/terms.html") {
+                    Link(destination: termsURL) {
+                        Label("Terms of Service", systemImage: "doc.text")
+                    }
                 }
             } header: {
                 Label("About & Support", systemImage: "info.circle")

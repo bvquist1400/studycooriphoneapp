@@ -148,12 +148,12 @@ Unlock advanced functionality with a StudyCoor Pro subscription:
 
 **🆘 SUPPORT**
 
-Need help? Contact us at [your email] or visit [your website].
+Need help? Contact us at support@studycoor.com or visit https://bvquist1400.github.io/studycooriphoneapp/.
 
 **SUBSCRIPTION DETAILS**
 
-• Monthly Plan: [Price]/month
-• Yearly Plan: [Price]/year (save [X]%)
+• Monthly Plan: $4.99/month
+• Yearly Plan: $39.99/year (save 33%)
 • Payment charged to Apple ID at confirmation of purchase
 • Subscription auto-renews unless cancelled 24 hours before period ends
 • Manage subscriptions in Apple ID Account Settings
@@ -161,7 +161,7 @@ Need help? Contact us at [your email] or visit [your website].
 
 **PRIVACY**
 
-StudyCoor collects zero personal data. All information stays on your device. Read our privacy policy at [URL].
+StudyCoor collects zero personal data. All information stays on your device. Read our privacy policy at https://bvquist1400.github.io/studycooriphoneapp/privacy.html.
 
 ---
 
@@ -218,25 +218,19 @@ Thank you for using StudyCoor!
 
 ## Support URL
 
-**https://[yourdomain.com]/support**
-
-Or GitHub: https://github.com/[username]/StudyCoor
+**https://bvquist1400.github.io/studycooriphoneapp/**
 
 ---
 
 ## Marketing URL
 
-**https://[yourdomain.com]**
-
-Or GitHub: https://github.com/[username]/StudyCoor
+**https://bvquist1400.github.io/studycooriphoneapp/**
 
 ---
 
 ## Privacy Policy URL
 
-**https://[yourdomain.com]/privacy**
-
-Or GitHub Pages: https://[username].github.io/StudyCoor/privacy
+**https://bvquist1400.github.io/studycooriphoneapp/privacy.html**
 
 *Note: You'll need to host the PRIVACY_POLICY.md file on a public URL. GitHub Pages is free and easy.*
 
@@ -255,8 +249,8 @@ Or GitHub Pages: https://[username].github.io/StudyCoor/privacy
 **Demo Instructions:**
 1. Open the app
 2. On the Calculator tab, enter sample data:
-   - Start Date: 30 days ago
-   - End Date: Today
+   - Start Date: December 26, 2025
+   - End Date: January 24, 2026
    - Frequency: QD (once daily)
    - Dispensed: 30
    - Returned: 5
@@ -286,7 +280,7 @@ Or GitHub Pages: https://[username].github.io/StudyCoor/privacy
 - Users must validate calculations and ensure regulatory compliance
 
 **Contact for Review Questions:**
-Email: [your email]
+Email: support@studycoor.com
 
 ---
 

@@ -24,38 +24,49 @@ struct HistoryView: View {
     var body: some View {
         NavigationStack {
             List(selection: $selection) {
-                ForEach(items) { calc in
-                    NavigationLink {
-                        ExplainabilityView(calculation: calc)
-                    } label: {
-                        row(for: calc)
-                    }
-                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                        Button(role: .destructive) { delete(calculation: calc) } label: {
-                            Label {
-                                Text("history.action.delete", tableName: "Localizable", comment: "Delete calculation from history action")
-                            } icon: {
-                                Image(systemName: "trash")
+                if items.isEmpty {
+                    ContentUnavailableView(
+                        "No History Yet",
+                        systemImage: "clock.arrow.circlepath",
+                        description: Text("Run a calculation on the Calculator tab to save it here.")
+                    )
+                    .listRowInsets(.init())
+                    .listRowBackground(Color.clear)
+                } else {
+                    ForEach(items) { calc in
+                        NavigationLink {
+                            ExplainabilityView(calculation: calc)
+                        } label: {
+                            row(for: calc)
+                        }
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) { delete(calculation: calc) } label: {
+                                Label {
+                                    Text("history.action.delete", tableName: "Localizable", comment: "Delete calculation from history action")
+                                } icon: {
+                                    Image(systemName: "trash")
+                                }
+                            }
+                            Button { share(calculation: calc) } label: {
+                                Label {
+                                    Text("history.action.share", tableName: "Localizable", comment: "Share calculation from history action")
+                                } icon: {
+                                    Image(systemName: "square.and.arrow.up")
+                                }
                             }
                         }
-                        Button { share(calculation: calc) } label: {
-                            Label {
-                                Text("history.action.share", tableName: "Localizable", comment: "Share calculation from history action")
-                            } icon: {
-                                Image(systemName: "square.and.arrow.up")
+                        .contextMenu {
+                            Button(action: { share(calculation: calc) }) {
+                                Text("history.action.share", tableName: "Localizable", comment: "Share calculation from context menu")
+                            }
+                            Button(role: .destructive, action: { delete(calculation: calc) }) {
+                                Text("history.action.delete", tableName: "Localizable", comment: "Delete calculation from context menu")
                             }
                         }
                     }
-                    .contextMenu {
-                        Button(action: { share(calculation: calc) }) {
-                            Text("history.action.share", tableName: "Localizable", comment: "Share calculation from context menu")
-                        }
-                        Button(role: .destructive, action: { delete(calculation: calc) }) {
-                            Text("history.action.delete", tableName: "Localizable", comment: "Delete calculation from context menu")
-                        }
-                    }
+                    .onDelete(perform: delete)
                 }
-                .onDelete(perform: delete)
+
             }
             .navigationTitle(Text("history.navigation.title", tableName: "Localizable", comment: "History navigation title"))
             .navigationBarTitleDisplayMode(.large)
@@ -310,6 +321,8 @@ struct HistoryView: View {
             }
             Text(String(format: "%.1f%%", calc.compliancePct))
                 .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
                 .padding(.vertical, 4)
                 .padding(.horizontal, 8)
                 .background(

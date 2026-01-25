@@ -127,7 +127,9 @@ struct CalculatorView: View {
                 errorSection
             }
             .studyCoorBackground()
-            .onAppear { scrollProxy = proxy }
+            .onAppear {
+                scrollProxy = proxy
+            }
             .onAppear { applyPrefillSelectionIfNeeded() }
             .onChange(of: studies.count) { _, _ in applyPrefillSelectionIfNeeded() }
             .onChange(of: frequency) { _, newValue in
@@ -264,11 +266,11 @@ struct CalculatorView: View {
                     record.bottles = models
                     record.subjectUUID = selectedSubject?.uuid
                     record.studyUUID = selectedStudy?.uuid
-                    ctx.insert(record)
-                } catch {
-                    encounteredError = error
-                    break
-                }
+                ctx.insert(record)
+            } catch {
+                encounteredError = error
+                break
+            }
             }
 
             if let encounteredError {
@@ -388,16 +390,21 @@ struct CalculatorView: View {
                             Chip(title: s.name, selected: selectedStudy?.id == s.id) {
                                 withAnimation { selectStudy(s) }
                             }
+                            .accessibilityHint("Double tap to select this study and apply its default settings")
                         }
                         if isProUnlocked {
                             Button { handleAddStudyTapped() } label: {
                                 Label("New", systemImage: "plus.circle")
                             }
                             .buttonStyle(.bordered)
+                            .accessibilityLabel("Create new study")
+                            .accessibilityHint("Opens a form to create a new study with custom settings")
                         }
                     }
                     .padding(.vertical, 4)
                 }
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Study selection")
 
                 if !isProUnlocked {
                     proUpsellBanner(
@@ -419,16 +426,21 @@ struct CalculatorView: View {
                                     selected: selectedSubject?.id == subj.id,
                                     action: { withAnimation { selectSubject(subj) } }
                                 )
+                                .accessibilityHint("Double tap to select this subject and fill in the subject ID")
                             }
                             if isProUnlocked {
                                 Button { handleAddSubjectTapped() } label: {
                                     Label("New", systemImage: "plus.circle")
                                 }
                                 .buttonStyle(.bordered)
+                                .accessibilityLabel("Create new subject")
+                                .accessibilityHint("Opens a form to add a new subject to the current study")
                             }
                         }
                         .padding(.vertical, 4)
                     }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel("Subject selection for \(s.name)")
                 }
 
                 if !isProUnlocked, selectedStudy != nil {
@@ -447,10 +459,13 @@ struct CalculatorView: View {
                                 Chip(title: d.name, selected: selectedDrug?.id == d.id) {
                                     withAnimation { selectDrug(d) }
                                 }
+                                .accessibilityHint("Double tap to select this drug for data entry")
                             }
                         }
                         .padding(.vertical, 4)
                     }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityLabel("Drug selection for multi-drug study")
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -465,11 +480,15 @@ struct CalculatorView: View {
                         Label("Manage", systemImage: "gearshape")
                     }
                     .font(.caption)
+                    .accessibilityLabel("Manage studies")
+                    .accessibilityHint("Opens the studies management screen")
                 } else {
                     Button { showPaywallSheet = true } label: {
                         Label("Unlock Pro", systemImage: "lock.fill")
                     }
                     .font(.caption)
+                    .accessibilityLabel("Unlock Pro features")
+                    .accessibilityHint("Opens subscription options to unlock study management features")
                 }
             }
         } footer: {
@@ -499,6 +518,8 @@ struct CalculatorView: View {
                 }
             } header: { Label("Results", systemImage: "gauge") }
                 .id(ScrollTarget.results)
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel("Compliance results for multi-drug study")
         } else if let result {
             Section {
                 complianceCard(for: nil, output: result)
@@ -506,6 +527,8 @@ struct CalculatorView: View {
                 Label("Result", systemImage: "gauge")
             }
             .id(ScrollTarget.results)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Compliance result")
         }
     }
 
@@ -554,9 +577,17 @@ struct CalculatorView: View {
                     LabeledContent("First day") {
                         DoseSelector(maxCount: Int(frequency.dosesPerDay), selection: $firstDayCount)
                     }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("First day expected doses")
+                    .accessibilityValue(firstDayCount.map { "\($0) doses" } ?? "Default, \(Int(frequency.dosesPerDay)) doses")
+                    .accessibilityHint("Adjust expected doses on the first day of the study period")
                     LabeledContent("Last day") {
                         DoseSelector(maxCount: Int(frequency.dosesPerDay), selection: $lastDayCount)
                     }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Last day expected doses")
+                    .accessibilityValue(lastDayCount.map { "\($0) doses" } ?? "Default, \(Int(frequency.dosesPerDay)) doses")
+                    .accessibilityHint("Adjust expected doses on the last day of the study period")
                 }
                 Text("Adjust how many doses were expected on the first and last calendar day. Defaults to the full daily frequency when unset.")
                     .font(.caption)
@@ -580,6 +611,8 @@ struct CalculatorView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
                             TextField("Label", text: bottle.label)
+                                .accessibilityLabel("Bottle label")
+                                .accessibilityHint("Enter a name or identifier for this bottle")
                             Spacer()
                             Button(role: .destructive) {
                                 bottles.removeAll { $0.id == bottleID }
@@ -587,7 +620,8 @@ struct CalculatorView: View {
                                 Image(systemName: "trash")
                             }
                             .buttonStyle(.borderless)
-                            .accessibilityLabel("Delete bottle")
+                            .accessibilityLabel("Delete bottle \(bottle.wrappedValue.label)")
+                            .accessibilityHint("Removes this bottle from the calculation")
                         }
                         HStack {
                             TextField("Dispensed", text: bottle.dispensed)
@@ -718,6 +752,8 @@ struct CalculatorView: View {
             Button { calculate() } label: {
                 Text("Calculate")
                     .font(.headline)
+                    .minimumScaleFactor(0.8)
+                    .lineLimit(1)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(
@@ -816,6 +852,8 @@ struct CalculatorView: View {
                 .tint(colorForCompliance(output.compliancePct))
                 .gaugeStyle(.accessoryLinear)
                 .animation(.spring(response: 0.5, dampingFraction: 0.8), value: output.compliancePct)
+                .accessibilityLabel("Compliance gauge")
+                .accessibilityValue("\(String(format: "%.0f", output.compliancePct)) percent on a scale from 0 to 150 percent")
                 if !output.flags.isEmpty {
                     let friendlyFlags = output.flagDescriptions
                     VStack(alignment: .leading, spacing: 8) {
@@ -828,6 +866,8 @@ struct CalculatorView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Compliance flags: \(friendlyFlags.joined(separator: ", "))")
                 }
                 if drugName == nil {
                     if showExplain {
@@ -842,6 +882,8 @@ struct CalculatorView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(colorForCompliance(output.compliancePct))
+                        .accessibilityLabel("View detailed breakdown")
+                        .accessibilityHint("Opens a step-by-step explanation of how compliance was calculated")
                     }
                 }
             }
@@ -1285,6 +1327,8 @@ private struct Chip: View {
         Button(action: action) {
             Text(title)
                 .font(.body)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
                 .padding(.vertical, 6)
                 .padding(.horizontal, 12)
                 .background(Capsule().fill(selected ? Color.accentColor.opacity(0.2) : Color.secondary.opacity(0.15)))
@@ -1313,9 +1357,13 @@ private struct SubjectChip: View {
             HStack(spacing: 6) {
                 Text(title)
                     .font(.body)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 if let badge {
                     Text(badge)
                         .font(.caption2)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                         .padding(.vertical, 2)
                         .padding(.horizontal, 6)
                         .background(Capsule().fill(badgeColor.opacity(0.15)))
@@ -1330,7 +1378,7 @@ private struct SubjectChip: View {
         .buttonStyle(.plain)
         .contentShape(Capsule())
         .overlay(Capsule().stroke(selected ? Color.accentColor : Color.clear, lineWidth: 1))
-        .accessibilityLabel(badge != nil ? "\(title), compliance \(badge!)" : title)
+        .accessibilityLabel(badge.map { "\(title), compliance \($0)" } ?? title)
         .accessibilityValue(selected ? "Selected" : "Not selected")
     }
 }
@@ -1416,7 +1464,7 @@ struct CalculatorView_Previews: PreviewProvider {
         NavigationStack {
             CalculatorView()
         }
-        .modelContainer(for: [Calculation.self, Bottle.self, Study.self, Subject.self])
+        .modelContainer(for: [Calculation.self, Bottle.self, Study.self, Subject.self], inMemory: true)
         .environmentObject(PurchaseManager.shared)
     }
 }

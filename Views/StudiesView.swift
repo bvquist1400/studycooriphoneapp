@@ -13,6 +13,7 @@ struct StudiesView: View {
     @State private var newPrnTargetPerDay: String = ""
     @State private var newNotes: String = ""
     @State private var newMultiDrug: Bool = false
+    @State private var saveError: String?
 
     var body: some View {
         NavigationStack {
@@ -23,6 +24,7 @@ struct StudiesView: View {
                             Image(systemName: "book.fill")
                                 .font(.title3)
                                 .foregroundStyle(.tint)
+                                .accessibilityHidden(true)
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(s.name).font(.headline)
                                 HStack(spacing: 12) {
@@ -34,6 +36,8 @@ struct StudiesView: View {
                             }
                         }
                     }
+                    .accessibilityLabel("\(s.name), \(s.subjects.count) subjects")
+                    .accessibilityHint("Double tap to view and edit study details")
                 }
                 .onDelete(perform: delete)
             }
@@ -42,11 +46,18 @@ struct StudiesView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showNew = true } label: { Label("New Study", systemImage: "plus") }
+                        .accessibilityLabel("Create new study")
+                        .accessibilityHint("Opens a form to create a new study with default settings")
                 }
             }
             .sheet(isPresented: $showNew) { newStudySheet }
             .listStyle(.insetGrouped)
             .studyCoorBackground()
+            .alert("Save Error", isPresented: .constant(saveError != nil)) {
+                Button("OK") { saveError = nil }
+            } message: {
+                Text(saveError ?? "")
+            }
         }
     }
 
@@ -61,11 +72,19 @@ struct StudiesView: View {
                     Picker("Dosing frequency", selection: $newFreq) {
                         ForEach(DosingFrequency.allCases) { f in Text(f.rawValue).tag(f) }
                     }
+                    .accessibilityLabel("Default dosing frequency")
+                    .accessibilityHint("Select how often medication is taken by default in this study")
                     if newFreq == .prn {
                         TextField("PRN target doses/day (optional)", text: $newPrnTargetPerDay).keyboardType(.decimalPad)
+                            .accessibilityLabel("PRN target doses per day")
+                            .accessibilityHint("Enter the default target number of as-needed doses per day")
                     }
                     Toggle("Allow partial doses", isOn: $newPartials)
+                        .accessibilityLabel("Allow partial doses")
+                        .accessibilityHint(newPartials ? "Enabled. Fractional pill counts will be preserved" : "Disabled. Pill counts will be rounded to whole numbers")
                     Toggle("Multi-drug study", isOn: $newMultiDrug)
+                        .accessibilityLabel("Multi-drug study")
+                        .accessibilityHint(newMultiDrug ? "Enabled. Study tracks multiple investigational products" : "Disabled. Study tracks a single drug")
                 } header: { Label("Defaults", systemImage: "slider.horizontal.3") }
             }
             .navigationTitle("New Study")
@@ -79,6 +98,7 @@ struct StudiesView: View {
     }
 
     private func createStudy() {
+        print("🔵 Creating study with name: \(newName)")
         let prn = NumericFormatter.parseLocalized(newPrnTargetPerDay)
         let notes = newNotes.trimmingCharacters(in: .whitespacesAndNewlines)
         let study = Study(
@@ -89,10 +109,19 @@ struct StudiesView: View {
             defaultPrnTargetPerDay: prn,
             multiDrug: newMultiDrug
         )
+        print("🔵 Study created: \(study.name), UUID: \(study.uuid)")
         ctx.insert(study)
-        try? ctx.save()
-        newName = ""; newNotes = ""; newFreq = .qd; newPartials = false; newPrnTargetPerDay = ""; newMultiDrug = false
-        showNew = false
+        print("🔵 Study inserted into context")
+        do {
+            try ctx.save()
+            print("✅ Study saved successfully!")
+            print("✅ Current studies count in query: \(studies.count)")
+            newName = ""; newNotes = ""; newFreq = .qd; newPartials = false; newPrnTargetPerDay = ""; newMultiDrug = false
+            showNew = false
+        } catch {
+            print("❌ Save failed: \(error)")
+            saveError = "Failed to save study: \(error.localizedDescription)"
+        }
     }
 
     private func delete(at offsets: IndexSet) {

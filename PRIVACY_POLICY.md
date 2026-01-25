@@ -126,8 +126,8 @@ If you are located in the European Economic Area (EEA), United Kingdom, or other
 
 If you have questions or concerns about this Privacy Policy, please contact us at:
 
-**Email:** [Your contact email]
-**Website:** [Your website, if applicable]
+**Email:** support@studycoor.com
+**Website:** https://bvquist1400.github.io/studycooriphoneapp/
 
 For App Store-related inquiries or subscription issues, please contact Apple Support.
 
