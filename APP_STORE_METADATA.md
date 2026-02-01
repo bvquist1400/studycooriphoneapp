@@ -162,6 +162,7 @@ Need help? Contact us at support@studycoor.com or visit https://bvquist1400.gith
 **PRIVACY**
 
 StudyCoor collects zero personal data. All information stays on your device. Read our privacy policy at https://bvquist1400.github.io/studycooriphoneapp/privacy.html.
+Terms of Use (EULA): https://bvquist1400.github.io/studycooriphoneapp/terms.html.
 
 ---
 
@@ -233,6 +234,12 @@ Thank you for using StudyCoor!
 **https://bvquist1400.github.io/studycooriphoneapp/privacy.html**
 
 *Note: You'll need to host the PRIVACY_POLICY.md file on a public URL. GitHub Pages is free and easy.*
+
+---
+
+## Terms of Use (EULA) URL
+
+**https://bvquist1400.github.io/studycooriphoneapp/terms.html**
 
 ---
 

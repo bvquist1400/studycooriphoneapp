@@ -98,7 +98,6 @@ struct StudiesView: View {
     }
 
     private func createStudy() {
-        print("🔵 Creating study with name: \(newName)")
         let prn = NumericFormatter.parseLocalized(newPrnTargetPerDay)
         let notes = newNotes.trimmingCharacters(in: .whitespacesAndNewlines)
         let study = Study(
@@ -109,17 +108,12 @@ struct StudiesView: View {
             defaultPrnTargetPerDay: prn,
             multiDrug: newMultiDrug
         )
-        print("🔵 Study created: \(study.name), UUID: \(study.uuid)")
         ctx.insert(study)
-        print("🔵 Study inserted into context")
         do {
             try ctx.save()
-            print("✅ Study saved successfully!")
-            print("✅ Current studies count in query: \(studies.count)")
             newName = ""; newNotes = ""; newFreq = .qd; newPartials = false; newPrnTargetPerDay = ""; newMultiDrug = false
             showNew = false
         } catch {
-            print("❌ Save failed: \(error)")
             saveError = "Failed to save study: \(error.localizedDescription)"
         }
     }

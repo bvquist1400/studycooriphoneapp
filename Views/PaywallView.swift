@@ -3,6 +3,55 @@ import SwiftUI
 import StoreKit
 #endif
 
+private enum LegalURLs {
+    static let privacy = URL(string: "https://bvquist1400.github.io/studycooriphoneapp/privacy.html")!
+    static let terms = URL(string: "https://bvquist1400.github.io/studycooriphoneapp/terms.html")!
+    static let manageSubscriptions = URL(string: "https://apps.apple.com/account/subscriptions")!
+}
+
+private struct PaywallLegalFooter: View {
+    var body: some View {
+        VStack(spacing: 8) {
+            Text("Payment will be charged to your Apple ID at confirmation of purchase. Subscriptions automatically renew unless canceled at least 24 hours before the end of the current period. Manage your subscription in App Store settings.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) {
+                    LegalLink(title: "Privacy Policy", url: LegalURLs.privacy, hint: "Opens the privacy policy in your browser.")
+                    LegalLink(title: "Terms of Use (EULA)", url: LegalURLs.terms, hint: "Opens the terms of use in your browser.")
+                    LegalLink(title: "Manage Subscriptions", url: LegalURLs.manageSubscriptions, hint: "Opens your Apple ID subscriptions management page.")
+                }
+
+                VStack(spacing: 4) {
+                    LegalLink(title: "Privacy Policy", url: LegalURLs.privacy, hint: "Opens the privacy policy in your browser.")
+                    LegalLink(title: "Terms of Use (EULA)", url: LegalURLs.terms, hint: "Opens the terms of use in your browser.")
+                    LegalLink(title: "Manage Subscriptions", url: LegalURLs.manageSubscriptions, hint: "Opens your Apple ID subscriptions management page.")
+                }
+                .multilineTextAlignment(.center)
+            }
+            .font(.footnote)
+        }
+        .padding(.top, 8)
+    }
+}
+
+private struct LegalLink: View {
+    let title: String
+    let url: URL
+    let hint: String
+
+    var body: some View {
+        Link(title, destination: url)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 10)
+            .contentShape(Rectangle())
+            .accessibilityLabel(Text(title))
+            .accessibilityHint(Text(hint))
+    }
+}
+
 struct PaywallView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
@@ -90,15 +139,31 @@ struct PaywallView: View {
 
                         // Price card
                         VStack(spacing: 12) {
-                            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                Text(priceText)
-                                    .font(.system(size: 34, weight: .bold, design: .rounded))
-                                Text(billing == .monthly ? "/month" : "/year")
+                            if purchases.isLoading {
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                                Text("Loading prices…")
+                                    .font(.subheadline)
                                     .foregroundStyle(.secondary)
-                            }
-                            if billing == .yearly {
-                                Text("Save ~33% vs monthly")
-                                    .font(.caption).foregroundStyle(.green)
+                            } else if let price = priceText {
+                                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                    Text(price)
+                                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                                    Text(billing == .monthly ? "/month" : "/year")
+                                        .foregroundStyle(.secondary)
+                                }
+                                if billing == .yearly {
+                                    Text("Save ~33% vs monthly")
+                                        .font(.caption).foregroundStyle(.green)
+                                }
+                            } else {
+                                Text("Subscription Unavailable")
+                                    .font(.headline)
+                                    .foregroundStyle(.secondary)
+                                Text("Please check your connection and try again.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
                             }
                         }
                         .padding(16)
@@ -167,10 +232,7 @@ struct PaywallView: View {
                             }
                         }
 
-                        Text("Payment will be charged to your Apple ID. Auto‑renewable; manage or cancel anytime in Settings.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
+                        PaywallLegalFooter()
                             .padding(.top, 4)
 #if DEBUG
                         if purchases.isDebugOverrideActive {
@@ -218,14 +280,13 @@ struct PaywallView: View {
         #endif
     }
 
-    private var priceText: String {
+    private var priceText: String? {
         #if canImport(StoreKit)
         if let p = purchases.products[billing == .monthly ? PurchaseManager.IDs.monthly : PurchaseManager.IDs.yearly] as? Product {
             return p.displayPrice
         }
         #endif
-        // Placeholder until products load
-        return billing == .monthly ? "$4.99" : "$39.99"
+        return nil
     }
 
     @ViewBuilder private func feature(icon: String, title: String, subtitle: String) -> some View {

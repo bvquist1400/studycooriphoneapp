@@ -1098,7 +1098,9 @@ struct CalculatorView: View {
                 result[identifier] = value.total / Double(value.count)
             }
         } catch {
+            #if DEBUG
             print("Failed to build compliance cache: \(error)")
+            #endif
             subjectComplianceCache = [:]
         }
     }

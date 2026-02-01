@@ -273,7 +273,9 @@ struct HistoryView: View {
             try data.write(to: url, options: .atomic)
             return url
         } catch {
+            #if DEBUG
             print("Export write failed: \(error)")
+            #endif
             return nil
         }
     }
