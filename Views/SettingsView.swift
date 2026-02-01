@@ -102,22 +102,31 @@ struct SettingsView: View {
 
     private func eraseAll() {
         do {
+            // Delete in dependency order: children first, then parents
+            // This avoids SwiftData accessing invalidated relationships during cascade
+
+            // 1. Delete all calculations (no relationships)
             let calculations = try ctx.fetch(FetchDescriptor<Calculation>())
+            for calc in calculations { ctx.delete(calc) }
+
+            // 2. Delete all subjects (children of Study)
+            let subjects = try ctx.fetch(FetchDescriptor<Subject>())
+            for subject in subjects { ctx.delete(subject) }
+
+            // 3. Delete all drugs (children of Study)
+            let drugs = try ctx.fetch(FetchDescriptor<Drug>())
+            for drug in drugs { ctx.delete(drug) }
+
+            // 4. Delete all studies (parents, now safe since children are gone)
             let studies = try ctx.fetch(FetchDescriptor<Study>())
+            for study in studies { ctx.delete(study) }
 
-            calculations.forEach { ctx.delete($0) }
-            studies.forEach { ctx.delete($0) }
+            // 5. Delete any orphaned bottles
+            let bottles = try ctx.fetch(FetchDescriptor<Bottle>())
+            for bottle in bottles { ctx.delete(bottle) }
+
+            // Single save after all deletions
             try ctx.save()
-
-            // A second pass cleans up any lingering orphaned records after cascades complete.
-            let orphanSubjects = try ctx.fetch(FetchDescriptor<Subject>(predicate: #Predicate { $0.study == nil }))
-            let orphanDrugs = try ctx.fetch(FetchDescriptor<Drug>(predicate: #Predicate { $0.study == nil }))
-            orphanSubjects.forEach { ctx.delete($0) }
-            orphanDrugs.forEach { ctx.delete($0) }
-
-            if ctx.hasChanges {
-                try ctx.save()
-            }
         } catch {
             ctx.rollback()
             eraseError = EraseError(message: error.localizedDescription)
